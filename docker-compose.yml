@@ -1,44 +1,29 @@
-#!/bin/bash
-#
-# Copyright 2020 RBKmoney
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
-CONFLUENT_PLATFORM_VERSION="5.1.2"  # with Kafka 2.1.1
-CONSUL_VERSION=1.4.2
-
-cat <<EOF
-version: '2'
-
 services:
-  ${SERVICE_NAME}:
-    image: ${BUILD_IMAGE}
+
+  testrunner:
+    image: $DEV_IMAGE_TAG
+    build:
+      dockerfile: Dockerfile.dev
+      context: .
+      args:
+        OTP_VERSION: $OTP_VERSION
+        THRIFT_VERSION: $THRIFT_VERSION
+        ELVIS_VERSION: $ELVIS_VERSION
     volumes:
       - .:$PWD
-      - $HOME/.cache:/home/$UNAME/.cache
-      - $HOME/.ssh:/home/$UNAME/.ssh:ro
+    hostname: $SERVICE_NAME
     working_dir: $PWD
-    command: /sbin/init
     depends_on:
       - riakdb
       - kafka1
       - kafka2
       - kafka3
+    ports:
+      - "8022"
+    command: /sbin/init
 
-  riakdb:
-    &member-node
-    image: dr2.rbkmoney.com/rbkmoney/riak-base:38fbd6239f7d1f7cac45912a7031aea8db010b0c
+  riakdb: &member-node
+    image: kefirgames/riak:${RIAK_VERSION}
     environment:
       - CLUSTER_NAME=riakkv
       - COORDINATOR_NODE=riakdb
@@ -106,4 +91,3 @@ volumes:
   schemas:
     external: false
 
-EOF

@@ -64,7 +64,7 @@ start_application({AppName, Env}) ->
 start_application(AppName) ->
     genlib_app:start_application(AppName).
 
--spec start_applications([appname()]) -> _Deps :: appname().
+-spec start_applications([{appname(), _Config} | appname()]) -> _Deps :: [appname()].
 start_applications(Apps) ->
     lists:foldl(fun(App, Deps) -> Deps ++ start_application(App) end, [], Apps).
 
@@ -74,7 +74,7 @@ stop_applications(AppNames) ->
 
 %%
 
--spec assert_wait_expected(any(), function(), mg_retry:strategy()) -> ok.
+-spec assert_wait_expected(any(), function(), mg_core_retry:strategy()) -> ok.
 assert_wait_expected(Expected, Fun, Strategy) when is_function(Fun, 0) ->
     case Fun() of
         Expected ->
@@ -104,7 +104,7 @@ stop_wait_all(Pids, Reason, Timeout) ->
     _ = erlang:process_flag(trap_exit, FlagWas),
     ok.
 
--spec await_stop(pid(), _Reason, reference()) -> ok | timeout.
+-spec await_stop([pid()], _Reason, reference()) -> ok.
 await_stop([Pid | Rest], Reason, TRef) ->
     receive
         {'EXIT', Pid, Reason} ->
@@ -126,8 +126,7 @@ await_stop([], _Reason, TRef) ->
 -spec handle_beat
     (consuela_client:beat(), {client, category()}) -> ok;
     (consuela_session_keeper:beat(), {keeper, category()}) -> ok;
-    (consuela_zombie_reaper:beat(), {reaper, category()}) -> ok;
-    (consuela_registry:beat(), {registry, category()}) -> ok.
+    (consuela_zombie_reaper:beat(), {reaper, category()}) -> ok.
 handle_beat(Beat, {Producer, Category}) ->
     ct:pal(Category, "[~p] ~p", [Producer, Beat]);
 handle_beat(_Beat, _) ->
