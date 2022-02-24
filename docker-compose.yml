@@ -18,6 +18,9 @@ services:
       - kafka1
       - kafka2
       - kafka3
+      - consul1
+      - consul2
+      - consul0
     ports:
       - "8022"
     command: /sbin/init
