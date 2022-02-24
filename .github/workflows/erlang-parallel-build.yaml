@@ -146,17 +146,14 @@ jobs:
       - name: Install Elvis binary
         if: ${{ inputs.use-elvis-binary }}
         run: |
-          mkdir /usr/src/elvis \
-          && cd /usr/src/elvis \
-          && wget -q "https://github.com/inaka/elvis/archive/refs/tags/${{ inputs.elvis-version }}.tar.gz" -O elvis.tar.gz \
+          mkdir elvis
+          && wget -q "https://github.com/inaka/elvis/archive/refs/tags/${{ inputs.elvis-version }}.tar.gz" -O elvis/elvis.tar.gz \
+          && cd elvis \
           && tar xzf elvis.tar.gz --strip-components=1 \
-          && cd /usr/src/elvis \
           && rebar3 escriptize \
           && cp _build/default/bin/elvis /usr/local/bin/ \
-          && chmod +x /usr/local/bin/elvis \
-          && elvis -v \
-          && cd / \
-          && rm -rf /usr/src/elvis
+          && chmod +x _build/default/bin/elvis \
+          && _build/default/bin/elvis -v
 
       - name: Check formatting
         run: rebar3 fmt -c
@@ -167,7 +164,7 @@ jobs:
 
       - name: Run linting with Elvis binary
         if: ${{ inputs.use-elvis-binary }}
-        run: elvis rock
+        run: elvis/_build/default/bin/elvis rock
 
       - name: Run xref
         run: rebar3 xref
