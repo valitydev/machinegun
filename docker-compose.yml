@@ -15,6 +15,8 @@ services:
     working_dir: $PWD
     depends_on:
       - riakdb
+      - member1
+      - member2
       - kafka1
       - kafka2
       - kafka3
@@ -26,7 +28,7 @@ services:
     command: /sbin/init
 
   riakdb: &member-node
-    image: docker.io/basho/riak:${RIAK_VERSION}
+    image: docker.io/basho/riak-kv:${RIAK_VERSION}
     environment:
       - CLUSTER_NAME=riakkv
       - COORDINATOR_NODE=riakdb
