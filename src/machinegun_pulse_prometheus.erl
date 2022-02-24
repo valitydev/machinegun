@@ -62,6 +62,7 @@ setup() ->
         {registry, registry()},
         {labels, [namespace, impact]},
         {buckets, duration_buckets()},
+        {duration_unit, seconds},
         {help, "Machinegun machine processing actions durations."}
     ]),
     % Timer lifecycle
@@ -90,6 +91,7 @@ setup() ->
         {registry, registry()},
         {labels, [namespace, queue]},
         {buckets, duration_buckets()},
+        {duration_unit, seconds},
         {help, "Machinegun timer processing durations."}
     ]),
     % Scheduler
@@ -104,6 +106,7 @@ setup() ->
         {registry, registry()},
         {labels, [namespace, name]},
         {buckets, duration_buckets()},
+        {duration_unit, seconds},
         {help, "Machinegun scheduler scan delay."}
     ]),
     true = prometheus_histogram:declare([
@@ -111,6 +114,7 @@ setup() ->
         {registry, registry()},
         {labels, [namespace, name]},
         {buckets, duration_buckets()},
+        {duration_unit, seconds},
         {help, "Machinegun scheduler scan duration."}
     ]),
     true = prometheus_counter:declare([
@@ -124,6 +128,7 @@ setup() ->
         {registry, registry()},
         {labels, [namespace, name]},
         {buckets, duration_buckets()},
+        {duration_unit, seconds},
         {help, "Machinegun scheduler task processing delay."}
     ]),
     true = prometheus_histogram:declare([
@@ -131,6 +136,7 @@ setup() ->
         {registry, registry()},
         {labels, [namespace, name]},
         {buckets, duration_buckets()},
+        {duration_unit, seconds},
         {help, "Machinegun scheduler task processing duration."}
     ]),
     true = prometheus_gauge:declare([
@@ -172,6 +178,7 @@ setup() ->
         {registry, registry()},
         {labels, [namespace, name, operation]},
         {buckets, duration_buckets()},
+        {duration_unit, seconds},
         {help, "Machinegun storage operation duration."}
     ]),
     % Riak client operations
@@ -186,6 +193,7 @@ setup() ->
         {registry, registry()},
         {labels, [namespace, name, operation]},
         {buckets, duration_buckets()},
+        {duration_unit, seconds},
         {help, "Machinegun riak client operation duration."}
     ]),
     ok.
