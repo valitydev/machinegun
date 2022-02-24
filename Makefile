@@ -72,7 +72,7 @@ xref:
 	$(REBAR) xref
 
 lint:
-	elvis rock
+	$(REBAR) lint
 
 check-format:
 	$(REBAR) fmt -c

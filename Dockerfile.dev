@@ -7,22 +7,6 @@ ARG BUILDARCH
 
 RUN wget -q -O- "https://github.com/valitydev/thrift/releases/download/${THRIFT_VERSION}/thrift-${THRIFT_VERSION}-linux-${BUILDARCH}.tar.gz" \
     | tar -xvz -C /usr/local/bin/
-#
-# Install Elvis
-#
-ARG ELVIS_VERSION
-
-RUN mkdir /usr/src/elvis \
-    && cd /usr/src/elvis \
-    && wget -q "https://github.com/inaka/elvis/archive/refs/tags/${ELVIS_VERSION}.tar.gz" -O elvis.tar.gz \
-    && tar xzf elvis.tar.gz --strip-components=1 \
-    && cd /usr/src/elvis \
-    && rebar3 escriptize \
-    && cp _build/default/bin/elvis /usr/local/bin/ \
-    && chmod +x /usr/local/bin/elvis \
-    && elvis -v \
-    && cd / \
-    && rm -rf /usr/src/elvis
 
 ENV CHARSET=UTF-8
 ENV LANG=C.UTF-8
