@@ -26,7 +26,7 @@ services:
     command: /sbin/init
 
   riakdb: &member-node
-    image: kefirgames/riak:${RIAK_VERSION}
+    image: docker.io/basho/riak:${RIAK_VERSION}
     environment:
       - CLUSTER_NAME=riakkv
       - COORDINATOR_NODE=riakdb
