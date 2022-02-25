@@ -223,7 +223,7 @@ dispatch_metrics(#mg_core_machine_process_started{processor_impact = Impact, nam
     ok = inc(mg_machine_processing_changes_total, [NS, decode_impact(Impact), started]);
 dispatch_metrics(#mg_core_machine_process_finished{processor_impact = Impact, namespace = NS, duration = Duration}) ->
     ok = inc(mg_machine_processing_changes_total, [NS, decode_impact(Impact), finished]),
-    ok = observe(mg_machine_processing_duration_seconds, [NS, decode_impact(Impact)], decode_duration(Duration));
+    ok = observe(mg_machine_processing_duration_seconds, [NS, decode_impact(Impact)], Duration);
 % Timer lifecycle
 dispatch_metrics(#mg_core_timer_lifecycle_created{namespace = NS, target_timestamp = Timestamp}) ->
     ok = inc(mg_timer_lifecycle_changes_total, [NS, created]),
@@ -240,7 +240,7 @@ dispatch_metrics(#mg_core_timer_process_started{namespace = NS, queue = Queue}) 
     ok = inc(mg_timer_processing_changes_total, [NS, Queue, started]);
 dispatch_metrics(#mg_core_timer_process_finished{namespace = NS, queue = Queue, duration = Duration}) ->
     ok = inc(mg_timer_processing_changes_total, [NS, Queue, finished]),
-    ok = observe(mg_timer_processing_duration_seconds, [NS, Queue], decode_duration(Duration));
+    ok = observe(mg_timer_processing_duration_seconds, [NS, Queue], Duration);
 % Scheduler
 dispatch_metrics(#mg_core_scheduler_search_success{
     scheduler_name = Name,
@@ -250,7 +250,7 @@ dispatch_metrics(#mg_core_scheduler_search_success{
 }) ->
     ok = inc(mg_scheduler_scan_changes_total, [NS, Name, success]),
     ok = observe(mg_scheduler_scan_delay_seconds, [NS, Name], decode_delay(DelayMS)),
-    ok = observe(mg_scheduler_scan_duration_seconds, [NS, Name], decode_duration(Duration));
+    ok = observe(mg_scheduler_scan_duration_seconds, [NS, Name], Duration);
 dispatch_metrics(#mg_core_scheduler_search_error{scheduler_name = Name, namespace = NS}) ->
     ok = inc(mg_scheduler_scan_changes_total, [NS, Name, error]);
 dispatch_metrics(#mg_core_scheduler_task_error{scheduler_name = Name, namespace = NS}) ->
@@ -267,7 +267,7 @@ dispatch_metrics(#mg_core_scheduler_task_finished{} = Beat) ->
         process_duration = Duration
     } = Beat,
     ok = inc(mg_scheduler_task_changes_total, [NS, Name, finished]),
-    ok = observe(mg_scheduler_task_processing_duration_seconds, [NS, Name], decode_duration(Duration));
+    ok = observe(mg_scheduler_task_processing_duration_seconds, [NS, Name], Duration);
 dispatch_metrics(#mg_core_scheduler_quota_reserved{} = Beat) ->
     #mg_core_scheduler_quota_reserved{
         scheduler_name = Name,
@@ -293,43 +293,43 @@ dispatch_metrics(#mg_core_storage_get_start{name = {NS, _Caller, Type}}) ->
     ok = inc(mg_storage_operation_changes_total, [NS, Type, get, start]);
 dispatch_metrics(#mg_core_storage_get_finish{name = {NS, _Caller, Type}, duration = Duration}) ->
     ok = inc(mg_storage_operation_changes_total, [NS, Type, get, finish]),
-    ok = observe(mg_storage_operation_duration_seconds, [NS, Type, get], decode_duration(Duration));
+    ok = observe(mg_storage_operation_duration_seconds, [NS, Type, get], Duration);
 dispatch_metrics(#mg_core_storage_put_start{name = {NS, _Caller, Type}}) ->
     ok = inc(mg_storage_operation_changes_total, [NS, Type, put, start]);
 dispatch_metrics(#mg_core_storage_put_finish{name = {NS, _Caller, Type}, duration = Duration}) ->
     ok = inc(mg_storage_operation_changes_total, [NS, Type, put, finish]),
-    ok = observe(mg_storage_operation_duration_seconds, [NS, Type, put], decode_duration(Duration));
+    ok = observe(mg_storage_operation_duration_seconds, [NS, Type, put], Duration);
 dispatch_metrics(#mg_core_storage_search_start{name = {NS, _Caller, Type}}) ->
     ok = inc(mg_storage_operation_changes_total, [NS, Type, search, start]);
 dispatch_metrics(#mg_core_storage_search_finish{name = {NS, _Caller, Type}, duration = Duration}) ->
     ok = inc(mg_storage_operation_changes_total, [NS, Type, search, finish]),
-    ok = observe(mg_storage_operation_duration_seconds, [NS, Type, search], decode_duration(Duration));
+    ok = observe(mg_storage_operation_duration_seconds, [NS, Type, search], Duration);
 dispatch_metrics(#mg_core_storage_delete_start{name = {NS, _Caller, Type}}) ->
     ok = inc(mg_storage_operation_changes_total, [NS, Type, delete, start]);
 dispatch_metrics(#mg_core_storage_delete_finish{name = {NS, _Caller, Type}, duration = Duration}) ->
     ok = inc(mg_storage_operation_changes_total, [NS, Type, delete, finish]),
-    ok = observe(mg_storage_operation_duration_seconds, [NS, Type, delete], decode_duration(Duration));
+    ok = observe(mg_storage_operation_duration_seconds, [NS, Type, delete], Duration);
 % Riak client operations
 dispatch_metrics(#mg_core_riak_client_get_start{name = {NS, _Caller, Type}}) ->
     ok = inc(mg_riak_client_operation_changes_total, [NS, Type, get, start]);
 dispatch_metrics(#mg_core_riak_client_get_finish{name = {NS, _Caller, Type}, duration = Duration}) ->
     ok = inc(mg_riak_client_operation_changes_total, [NS, Type, get, finish]),
-    ok = observe(mg_riak_client_operation_duration_seconds, [NS, Type, get], decode_duration(Duration));
+    ok = observe(mg_riak_client_operation_duration_seconds, [NS, Type, get], Duration);
 dispatch_metrics(#mg_core_riak_client_put_start{name = {NS, _Caller, Type}}) ->
     ok = inc(mg_riak_client_operation_changes_total, [NS, Type, put, start]);
 dispatch_metrics(#mg_core_riak_client_put_finish{name = {NS, _Caller, Type}, duration = Duration}) ->
     ok = inc(mg_riak_client_operation_changes_total, [NS, Type, put, finish]),
-    ok = observe(mg_riak_client_operation_duration_seconds, [NS, Type, put], decode_duration(Duration));
+    ok = observe(mg_riak_client_operation_duration_seconds, [NS, Type, put], Duration);
 dispatch_metrics(#mg_core_riak_client_search_start{name = {NS, _Caller, Type}}) ->
     ok = inc(mg_riak_client_operation_changes_total, [NS, Type, search, start]);
 dispatch_metrics(#mg_core_riak_client_search_finish{name = {NS, _Caller, Type}, duration = Duration}) ->
     ok = inc(mg_riak_client_operation_changes_total, [NS, Type, search, finish]),
-    ok = observe(mg_riak_client_operation_duration_seconds, [NS, Type, search], decode_duration(Duration));
+    ok = observe(mg_riak_client_operation_duration_seconds, [NS, Type, search], Duration);
 dispatch_metrics(#mg_core_riak_client_delete_start{name = {NS, _Caller, Type}}) ->
     ok = inc(mg_riak_client_operation_changes_total, [NS, Type, delete, start]);
 dispatch_metrics(#mg_core_riak_client_delete_finish{name = {NS, _Caller, Type}, duration = Duration}) ->
     ok = inc(mg_riak_client_operation_changes_total, [NS, Type, delete, finish]),
-    ok = observe(mg_riak_client_operation_duration_seconds, [NS, Type, delete], decode_duration(Duration));
+    ok = observe(mg_riak_client_operation_duration_seconds, [NS, Type, delete], Duration);
 % Unknown
 dispatch_metrics(_Beat) ->
     ok.
@@ -369,10 +369,6 @@ decode_impact(timeout) ->
     timeout;
 decode_impact(continuation) ->
     continuation.
-
--spec decode_duration(number()) -> number().
-decode_duration(Duration) ->
-    erlang:convert_time_unit(Duration, native, microsecond) / 1000000.
 
 -spec decode_ts_offset(number()) -> number().
 decode_ts_offset(Timestamp) ->
