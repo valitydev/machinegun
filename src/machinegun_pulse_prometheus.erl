@@ -401,7 +401,7 @@ duration_buckets() ->
         10
     ].
 
--spec duration_buckets() -> [number()].
+-spec duration_scan_delay_buckets() -> [number()].
 duration_scan_delay_buckets() ->
     [
         0.100,
