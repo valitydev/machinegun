@@ -105,7 +105,7 @@ setup() ->
         {name, mg_scheduler_scan_delay_seconds},
         {registry, registry()},
         {labels, [namespace, name]},
-        {buckets, duration_buckets()},
+        {buckets, duration_scan_delay_buckets()},
         {duration_unit, seconds},
         {help, "Machinegun scheduler scan delay."}
     ]),
@@ -392,6 +392,18 @@ duration_buckets() ->
         0.010,
         0.025,
         0.050,
+        0.100,
+        0.250,
+        0.500,
+        1,
+        2.5,
+        5,
+        10
+    ].
+
+-spec duration_buckets() -> [number()].
+duration_scan_delay_buckets() ->
+    [
         0.100,
         0.250,
         0.500,
