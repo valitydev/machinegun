@@ -235,7 +235,7 @@ machine_lifecycle_transient_error_test(_C) ->
         machine_id = <<"ID">>,
         request_context = null,
         exception = {throw, thrown, []},
-        retry_strategy = finish,
+        retry_strategy = mg_core_retry:new_strategy({linear, infinity, 1}),
         retry_action = finish
     }).
 
@@ -266,7 +266,7 @@ timer_lifecycle_created_test(_C) ->
         namespace = ?NS,
         machine_id = <<"ID">>,
         request_context = null,
-        target_timestamp = 0
+        target_timestamp = 1
     }).
 
 -spec timer_lifecycle_rescheduled_test(config()) -> _.
@@ -275,7 +275,9 @@ timer_lifecycle_rescheduled_test(_C) ->
         namespace = ?NS,
         machine_id = <<"ID">>,
         request_context = null,
-        target_timestamp = 0
+        deadline = undefined,
+        target_timestamp = 1,
+        attempt = 0
     }).
 
 -spec timer_lifecycle_rescheduling_error_test(config()) -> _.
@@ -303,7 +305,7 @@ timer_process_started_test(_C) ->
         machine_id = <<"ID">>,
         request_context = null,
         queue = normal,
-        target_timestamp = 0,
+        target_timestamp = 1,
         deadline = undefined
     }).
 
@@ -314,7 +316,7 @@ timer_process_finished_test(_C) ->
         machine_id = <<"ID">>,
         request_context = null,
         queue = normal,
-        target_timestamp = 0,
+        target_timestamp = 1,
         deadline = undefined,
         duration = 0
     }).
@@ -381,7 +383,7 @@ scheduler_quota_reserved_test(_C) ->
         scheduler_name = name,
         active_tasks = 0,
         waiting_tasks = 0,
-        quota_name = undefined,
+        quota_name = unlimited,
         quota_reserved = 0
     }).
 
