@@ -373,7 +373,7 @@ decode_impact(continuation) ->
 -spec decode_ts_offset(number()) -> number().
 decode_ts_offset(Timestamp0) ->
     Timestamp1 = erlang:max(genlib_time:unow() - Timestamp0, 0),
-    erlang:convert_time_unit(Timestamp1, seconds, native).
+    erlang:convert_time_unit(Timestamp1, second, native).
 
 -spec decode_delay(number()) -> number().
 decode_delay(DelayMs) ->
