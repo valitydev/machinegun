@@ -38,6 +38,4 @@ COPY --from=builder /build/_build/prod/rel/${SERVICE_NAME} /opt/${SERVICE_NAME}
 
 ENTRYPOINT ["./bin/entrypoint.sh", "./etc/config.yaml"]
 
-CMD ["/opt/machinegun/bin/machinegun", "foreground"]
-
 EXPOSE 8022
