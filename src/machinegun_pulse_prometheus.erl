@@ -371,8 +371,9 @@ decode_impact(continuation) ->
     continuation.
 
 -spec decode_ts_offset(number()) -> number().
-decode_ts_offset(Timestamp) ->
-    erlang:max(genlib_time:unow() - Timestamp, 0).
+decode_ts_offset(Timestamp0) ->
+    Timestamp1 = erlang:max(genlib_time:unow() - Timestamp0, 0),
+    erlang:convert_time_unit(Timestamp1, seconds, native).
 
 -spec decode_delay(number()) -> number().
 decode_delay(DelayMs) ->
