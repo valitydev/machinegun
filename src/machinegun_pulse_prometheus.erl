@@ -21,6 +21,7 @@
 
 -export([setup/0]).
 -export([handle_beat/2]).
+-export([duration_buckets/0]).
 
 %% internal types
 -type beat() :: machinegun_pulse:beat().
