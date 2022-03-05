@@ -251,24 +251,25 @@ machine_process_started_test(_C) ->
 
 -spec machine_process_finished_test(config()) -> _.
 machine_process_finished_test(_C) ->
-    Buckets0 = test_millisecond_buckets(),
-    BucketsSeq = lists:seq(1, erlang:length(Buckets0)),
-    Buckets1 = lists:zip(BucketsSeq, Buckets0),
-    ok = lists:foreach(
-        fun({Curr, Bucket}) ->
+    Buckets = test_millisecond_buckets(),
+    _ = maps:fold(
+        fun(DurationMs, BucketIdx, Acc) ->
             ok = test_beat(#mg_core_machine_process_finished{
                 namespace = ?NS,
                 machine_id = <<"ID">>,
                 request_context = null,
                 processor_impact = timeout,
                 deadline = undefined,
-                duration = erlang:convert_time_unit(Bucket, millisecond, native)
+                duration = erlang:convert_time_unit(DurationMs, millisecond, native)
             }),
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_machine_processing_duration_seconds, [?NS, timeout]),
-            1 = lists:nth(Curr, BucketsHits)
+            BucketHit = lists:nth(BucketIdx, BucketsHits),
+            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            Acc#{BucketIdx => BucketHit}
         end,
-        Buckets1
+        #{},
+        Buckets
     ).
 
 -spec timer_lifecycle_created_test(config()) -> _.
@@ -322,11 +323,9 @@ timer_process_started_test(_C) ->
 
 -spec timer_process_finished_test(config()) -> _.
 timer_process_finished_test(_C) ->
-    Buckets0 = test_millisecond_buckets(),
-    BucketsSeq = lists:seq(1, erlang:length(Buckets0)),
-    Buckets1 = lists:zip(BucketsSeq, Buckets0),
-    ok = lists:foreach(
-        fun({Curr, Bucket}) ->
+    Buckets = test_millisecond_buckets(),
+    _ = maps:fold(
+        fun(DurationMs, BucketIdx, Acc) ->
             ok = test_beat(#mg_core_timer_process_finished{
                 namespace = ?NS,
                 machine_id = <<"ID">>,
@@ -334,35 +333,39 @@ timer_process_finished_test(_C) ->
                 queue = normal,
                 target_timestamp = 1,
                 deadline = undefined,
-                duration = erlang:convert_time_unit(Bucket, millisecond, native)
+                duration = erlang:convert_time_unit(DurationMs, millisecond, native)
             }),
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_timer_processing_duration_seconds, [?NS, normal]),
-            1 = lists:nth(Curr, BucketsHits)
+            BucketHit = lists:nth(BucketIdx, BucketsHits),
+            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            Acc#{BucketIdx => BucketHit}
         end,
-        Buckets1
+        #{},
+        Buckets
     ).
 
 -spec scheduler_search_success_test(config()) -> _.
 scheduler_search_success_test(_C) ->
-    Buckets0 = test_millisecond_buckets(),
-    BucketsSeq = lists:seq(1, erlang:length(Buckets0)),
-    Buckets1 = lists:zip(BucketsSeq, Buckets0),
-    ok = lists:foreach(
-        fun({Curr, Bucket}) ->
+    Buckets = test_millisecond_buckets(),
+    _ = maps:fold(
+        fun(DurationMs, BucketIdx, Acc) ->
             ok = test_beat(#mg_core_scheduler_search_success{
                 namespace = ?NS,
                 scheduler_name = name,
                 delay = 0,
                 tasks = [],
                 limit = 0,
-                duration = erlang:convert_time_unit(Bucket, millisecond, native)
+                duration = erlang:convert_time_unit(DurationMs, millisecond, native)
             }),
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_scheduler_scan_duration_seconds, [?NS, name]),
-            1 = lists:nth(Curr, BucketsHits)
+            BucketHit = lists:nth(BucketIdx, BucketsHits),
+            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            Acc#{BucketIdx => BucketHit}
         end,
-        Buckets1
+        #{},
+        Buckets
     ).
 
 -spec scheduler_search_error_test(config()) -> _.
@@ -401,23 +404,24 @@ scheduler_task_started_test(_C) ->
 
 -spec scheduler_task_finished_test(config()) -> _.
 scheduler_task_finished_test(_C) ->
-    Buckets0 = test_millisecond_buckets(),
-    BucketsSeq = lists:seq(1, erlang:length(Buckets0)),
-    Buckets1 = lists:zip(BucketsSeq, Buckets0),
-    ok = lists:foreach(
-        fun({Curr, Bucket}) ->
+    Buckets = test_millisecond_buckets(),
+    _ = maps:fold(
+        fun(DurationMs, BucketIdx, Acc) ->
             ok = test_beat(#mg_core_scheduler_task_finished{
                 namespace = ?NS,
                 scheduler_name = name,
                 machine_id = <<"ID">>,
                 task_delay = 0,
-                process_duration = erlang:convert_time_unit(Bucket, millisecond, native)
+                process_duration = erlang:convert_time_unit(DurationMs, millisecond, native)
             }),
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_scheduler_task_processing_duration_seconds, [?NS, name]),
-            1 = lists:nth(Curr, BucketsHits)
+            BucketHit = lists:nth(BucketIdx, BucketsHits),
+            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            Acc#{BucketIdx => BucketHit}
         end,
-        Buckets1
+        #{},
+        Buckets
     ).
 
 -spec scheduler_quota_reserved_test(config()) -> _.
@@ -458,20 +462,21 @@ storage_get_start_test(_C) ->
 
 -spec storage_get_finish_test(config()) -> _.
 storage_get_finish_test(_C) ->
-    Buckets0 = test_millisecond_buckets(),
-    BucketsSeq = lists:seq(1, erlang:length(Buckets0)),
-    Buckets1 = lists:zip(BucketsSeq, Buckets0),
-    ok = lists:foreach(
-        fun({Curr, Bucket}) ->
+    Buckets = test_millisecond_buckets(),
+    _ = maps:fold(
+        fun(DurationMs, BucketIdx, Acc) ->
             ok = test_beat(#mg_core_storage_get_finish{
                 name = {?NS, caller, type},
-                duration = erlang:convert_time_unit(Bucket, millisecond, native)
+                duration = erlang:convert_time_unit(DurationMs, millisecond, native)
             }),
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_storage_operation_duration_seconds, [?NS, type, get]),
-            1 = lists:nth(Curr, BucketsHits)
+            BucketHit = lists:nth(BucketIdx, BucketsHits),
+            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            Acc#{BucketIdx => BucketHit}
         end,
-        Buckets1
+        #{},
+        Buckets
     ).
 
 -spec storage_put_start_test(config()) -> _.
@@ -482,20 +487,21 @@ storage_put_start_test(_C) ->
 
 -spec storage_put_finish_test(config()) -> _.
 storage_put_finish_test(_C) ->
-    Buckets0 = test_millisecond_buckets(),
-    BucketsSeq = lists:seq(1, erlang:length(Buckets0)),
-    Buckets1 = lists:zip(BucketsSeq, Buckets0),
-    ok = lists:foreach(
-        fun({Curr, Bucket}) ->
+    Buckets = test_millisecond_buckets(),
+    _ = maps:fold(
+        fun(DurationMs, BucketIdx, Acc) ->
             ok = test_beat(#mg_core_storage_put_finish{
                 name = {?NS, caller, type},
-                duration = erlang:convert_time_unit(Bucket, millisecond, native)
+                duration = erlang:convert_time_unit(DurationMs, millisecond, native)
             }),
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_storage_operation_duration_seconds, [?NS, type, put]),
-            1 = lists:nth(Curr, BucketsHits)
+            BucketHit = lists:nth(BucketIdx, BucketsHits),
+            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            Acc#{BucketIdx => BucketHit}
         end,
-        Buckets1
+        #{},
+        Buckets
     ).
 
 -spec storage_search_start_test(config()) -> _.
@@ -506,20 +512,21 @@ storage_search_start_test(_C) ->
 
 -spec storage_search_finish_test(config()) -> _.
 storage_search_finish_test(_C) ->
-    Buckets0 = test_millisecond_buckets(),
-    BucketsSeq = lists:seq(1, erlang:length(Buckets0)),
-    Buckets1 = lists:zip(BucketsSeq, Buckets0),
-    ok = lists:foreach(
-        fun({Curr, Bucket}) ->
+    Buckets = test_millisecond_buckets(),
+    _ = maps:fold(
+        fun(DurationMs, BucketIdx, Acc) ->
             ok = test_beat(#mg_core_storage_search_finish{
                 name = {?NS, caller, type},
-                duration = erlang:convert_time_unit(Bucket, millisecond, native)
+                duration = erlang:convert_time_unit(DurationMs, millisecond, native)
             }),
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_storage_operation_duration_seconds, [?NS, type, search]),
-            1 = lists:nth(Curr, BucketsHits)
+            BucketHit = lists:nth(BucketIdx, BucketsHits),
+            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            Acc#{BucketIdx => BucketHit}
         end,
-        Buckets1
+        #{},
+        Buckets
     ).
 
 -spec storage_delete_start_test(config()) -> _.
@@ -530,20 +537,21 @@ storage_delete_start_test(_C) ->
 
 -spec storage_delete_finish_test(config()) -> _.
 storage_delete_finish_test(_C) ->
-    Buckets0 = test_millisecond_buckets(),
-    BucketsSeq = lists:seq(1, erlang:length(Buckets0)),
-    Buckets1 = lists:zip(BucketsSeq, Buckets0),
-    ok = lists:foreach(
-        fun({Curr, Bucket}) ->
+    Buckets = test_millisecond_buckets(),
+    _ = maps:fold(
+        fun(DurationMs, BucketIdx, Acc) ->
             ok = test_beat(#mg_core_storage_delete_finish{
                 name = {?NS, caller, type},
-                duration = erlang:convert_time_unit(Bucket, millisecond, native)
+                duration = erlang:convert_time_unit(DurationMs, millisecond, native)
             }),
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_storage_operation_duration_seconds, [?NS, type, delete]),
-            1 = lists:nth(Curr, BucketsHits)
+            BucketHit = lists:nth(BucketIdx, BucketsHits),
+            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            Acc#{BucketIdx => BucketHit}
         end,
-        Buckets1
+        #{},
+        Buckets
     ).
 
 -spec riak_client_get_start_test(config()) -> _.
@@ -554,20 +562,21 @@ riak_client_get_start_test(_C) ->
 
 -spec riak_client_get_finish_test(config()) -> _.
 riak_client_get_finish_test(_C) ->
-    Buckets0 = test_millisecond_buckets(),
-    BucketsSeq = lists:seq(1, erlang:length(Buckets0)),
-    Buckets1 = lists:zip(BucketsSeq, Buckets0),
-    ok = lists:foreach(
-        fun({Curr, Bucket}) ->
+    Buckets = test_millisecond_buckets(),
+    _ = maps:fold(
+        fun(DurationMs, BucketIdx, Acc) ->
             ok = test_beat(#mg_core_riak_client_get_finish{
                 name = {?NS, caller, type},
-                duration = erlang:convert_time_unit(Bucket, millisecond, native)
+                duration = erlang:convert_time_unit(DurationMs, millisecond, native)
             }),
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_riak_client_operation_duration_seconds, [?NS, type, get]),
-            1 = lists:nth(Curr, BucketsHits)
+            BucketHit = lists:nth(BucketIdx, BucketsHits),
+            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            Acc#{BucketIdx => BucketHit}
         end,
-        Buckets1
+        #{},
+        Buckets
     ).
 
 -spec riak_client_put_start_test(config()) -> _.
@@ -578,20 +587,21 @@ riak_client_put_start_test(_C) ->
 
 -spec riak_client_put_finish_test(config()) -> _.
 riak_client_put_finish_test(_C) ->
-    Buckets0 = test_millisecond_buckets(),
-    BucketsSeq = lists:seq(1, erlang:length(Buckets0)),
-    Buckets1 = lists:zip(BucketsSeq, Buckets0),
-    ok = lists:foreach(
-        fun({Curr, Bucket}) ->
+    Buckets = test_millisecond_buckets(),
+    _ = maps:fold(
+        fun(DurationMs, BucketIdx, Acc) ->
             ok = test_beat(#mg_core_riak_client_put_finish{
                 name = {?NS, caller, type},
-                duration = erlang:convert_time_unit(Bucket, millisecond, native)
+                duration = erlang:convert_time_unit(DurationMs, millisecond, native)
             }),
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_riak_client_operation_duration_seconds, [?NS, type, put]),
-            1 = lists:nth(Curr, BucketsHits)
+            BucketHit = lists:nth(BucketIdx, BucketsHits),
+            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            Acc#{BucketIdx => BucketHit}
         end,
-        Buckets1
+        #{},
+        Buckets
     ).
 
 -spec riak_client_search_start_test(config()) -> _.
@@ -602,20 +612,21 @@ riak_client_search_start_test(_C) ->
 
 -spec riak_client_search_finish_test(config()) -> _.
 riak_client_search_finish_test(_C) ->
-    Buckets0 = test_millisecond_buckets(),
-    BucketsSeq = lists:seq(1, erlang:length(Buckets0)),
-    Buckets1 = lists:zip(BucketsSeq, Buckets0),
-    ok = lists:foreach(
-        fun({Curr, Bucket}) ->
+    Buckets = test_millisecond_buckets(),
+    _ = maps:fold(
+        fun(DurationMs, BucketIdx, Acc) ->
             ok = test_beat(#mg_core_riak_client_search_finish{
                 name = {?NS, caller, type},
-                duration = erlang:convert_time_unit(Bucket, millisecond, native)
+                duration = erlang:convert_time_unit(DurationMs, millisecond, native)
             }),
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_riak_client_operation_duration_seconds, [?NS, type, search]),
-            1 = lists:nth(Curr, BucketsHits)
+            BucketHit = lists:nth(BucketIdx, BucketsHits),
+            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            Acc#{BucketIdx => BucketHit}
         end,
-        Buckets1
+        #{},
+        Buckets
     ).
 
 -spec riak_client_delete_start_test(config()) -> _.
@@ -626,20 +637,21 @@ riak_client_delete_start_test(_C) ->
 
 -spec riak_client_delete_finish_test(config()) -> _.
 riak_client_delete_finish_test(_C) ->
-    Buckets0 = test_millisecond_buckets(),
-    BucketsSeq = lists:seq(1, erlang:length(Buckets0)),
-    Buckets1 = lists:zip(BucketsSeq, Buckets0),
-    ok = lists:foreach(
-        fun({Curr, Bucket}) ->
+    Buckets = test_millisecond_buckets(),
+    _ = maps:fold(
+        fun(DurationMs, BucketIdx, Acc) ->
             ok = test_beat(#mg_core_riak_client_delete_finish{
                 name = {?NS, caller, type},
-                duration = erlang:convert_time_unit(Bucket, millisecond, native)
+                duration = erlang:convert_time_unit(DurationMs, millisecond, native)
             }),
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_riak_client_operation_duration_seconds, [?NS, type, delete]),
-            1 = lists:nth(Curr, BucketsHits)
+            BucketHit = lists:nth(BucketIdx, BucketsHits),
+            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            Acc#{BucketIdx => BucketHit}
         end,
-        Buckets1
+        #{},
+        Buckets
     ).
 
 %% Utils
@@ -686,8 +698,9 @@ machinegun_config() ->
 
 -spec test_millisecond_buckets() -> [integer()].
 test_millisecond_buckets() ->
-    [
-        1,
-        5,
-        10
-    ].
+    #{
+        0 => 1,
+        1 => 1,
+        5 => 2,
+        10 => 3
+    }.
