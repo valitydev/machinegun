@@ -265,7 +265,8 @@ machine_process_finished_test(_C) ->
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_machine_processing_duration_seconds, [?NS, timeout]),
             BucketHit = lists:nth(BucketIdx, BucketsHits),
-            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            %% Check that bucket under index BucketIdx received one hit
+            ?assertEqual(maps:get(BucketIdx, Acc, 0) + 1, BucketHit),
             Acc#{BucketIdx => BucketHit}
         end,
         #{},
@@ -338,7 +339,8 @@ timer_process_finished_test(_C) ->
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_timer_processing_duration_seconds, [?NS, normal]),
             BucketHit = lists:nth(BucketIdx, BucketsHits),
-            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            %% Check that bucket under index BucketIdx received one hit
+            ?assertEqual(maps:get(BucketIdx, Acc, 0) + 1, BucketHit),
             Acc#{BucketIdx => BucketHit}
         end,
         #{},
@@ -361,7 +363,8 @@ scheduler_search_success_test(_C) ->
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_scheduler_scan_duration_seconds, [?NS, name]),
             BucketHit = lists:nth(BucketIdx, BucketsHits),
-            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            %% Check that bucket under index BucketIdx received one hit
+            ?assertEqual(maps:get(BucketIdx, Acc, 0) + 1, BucketHit),
             Acc#{BucketIdx => BucketHit}
         end,
         #{},
@@ -417,7 +420,8 @@ scheduler_task_finished_test(_C) ->
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_scheduler_task_processing_duration_seconds, [?NS, name]),
             BucketHit = lists:nth(BucketIdx, BucketsHits),
-            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            %% Check that bucket under index BucketIdx received one hit
+            ?assertEqual(maps:get(BucketIdx, Acc, 0) + 1, BucketHit),
             Acc#{BucketIdx => BucketHit}
         end,
         #{},
@@ -472,7 +476,8 @@ storage_get_finish_test(_C) ->
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_storage_operation_duration_seconds, [?NS, type, get]),
             BucketHit = lists:nth(BucketIdx, BucketsHits),
-            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            %% Check that bucket under index BucketIdx received one hit
+            ?assertEqual(maps:get(BucketIdx, Acc, 0) + 1, BucketHit),
             Acc#{BucketIdx => BucketHit}
         end,
         #{},
@@ -497,7 +502,8 @@ storage_put_finish_test(_C) ->
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_storage_operation_duration_seconds, [?NS, type, put]),
             BucketHit = lists:nth(BucketIdx, BucketsHits),
-            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            %% Check that bucket under index BucketIdx received one hit
+            ?assertEqual(maps:get(BucketIdx, Acc, 0) + 1, BucketHit),
             Acc#{BucketIdx => BucketHit}
         end,
         #{},
@@ -522,7 +528,8 @@ storage_search_finish_test(_C) ->
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_storage_operation_duration_seconds, [?NS, type, search]),
             BucketHit = lists:nth(BucketIdx, BucketsHits),
-            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            %% Check that bucket under index BucketIdx received one hit
+            ?assertEqual(maps:get(BucketIdx, Acc, 0) + 1, BucketHit),
             Acc#{BucketIdx => BucketHit}
         end,
         #{},
@@ -547,7 +554,8 @@ storage_delete_finish_test(_C) ->
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_storage_operation_duration_seconds, [?NS, type, delete]),
             BucketHit = lists:nth(BucketIdx, BucketsHits),
-            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            %% Check that bucket under index BucketIdx received one hit
+            ?assertEqual(maps:get(BucketIdx, Acc, 0) + 1, BucketHit),
             Acc#{BucketIdx => BucketHit}
         end,
         #{},
@@ -572,7 +580,8 @@ riak_client_get_finish_test(_C) ->
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_riak_client_operation_duration_seconds, [?NS, type, get]),
             BucketHit = lists:nth(BucketIdx, BucketsHits),
-            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            %% Check that bucket under index BucketIdx received one hit
+            ?assertEqual(maps:get(BucketIdx, Acc, 0) + 1, BucketHit),
             Acc#{BucketIdx => BucketHit}
         end,
         #{},
@@ -597,7 +606,8 @@ riak_client_put_finish_test(_C) ->
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_riak_client_operation_duration_seconds, [?NS, type, put]),
             BucketHit = lists:nth(BucketIdx, BucketsHits),
-            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            %% Check that bucket under index BucketIdx received one hit
+            ?assertEqual(maps:get(BucketIdx, Acc, 0) + 1, BucketHit),
             Acc#{BucketIdx => BucketHit}
         end,
         #{},
@@ -622,7 +632,8 @@ riak_client_search_finish_test(_C) ->
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_riak_client_operation_duration_seconds, [?NS, type, search]),
             BucketHit = lists:nth(BucketIdx, BucketsHits),
-            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            %% Check that bucket under index BucketIdx received one hit
+            ?assertEqual(maps:get(BucketIdx, Acc, 0) + 1, BucketHit),
             Acc#{BucketIdx => BucketHit}
         end,
         #{},
@@ -647,7 +658,8 @@ riak_client_delete_finish_test(_C) ->
             {BucketsHits, _} =
                 prometheus_histogram:value(mg_riak_client_operation_duration_seconds, [?NS, type, delete]),
             BucketHit = lists:nth(BucketIdx, BucketsHits),
-            BucketHit = maps:get(BucketIdx, Acc, 0) + 1,
+            %% Check that bucket under index BucketIdx received one hit
+            ?assertEqual(maps:get(BucketIdx, Acc, 0) + 1, BucketHit),
             Acc#{BucketIdx => BucketHit}
         end,
         #{},
