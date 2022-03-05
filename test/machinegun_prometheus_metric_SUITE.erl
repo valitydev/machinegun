@@ -696,7 +696,7 @@ machinegun_config() ->
         {pulse, {machinegun_pulse, #{}}}
     ].
 
--spec test_millisecond_buckets() -> [integer()].
+-spec test_millisecond_buckets() -> #{non_neg_integer() => pos_integer()}.
 test_millisecond_buckets() ->
     #{
         0 => 1,
