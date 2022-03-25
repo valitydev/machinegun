@@ -85,7 +85,7 @@
 all() ->
     [{group, default_group}].
 
--spec groups() -> [{group_name(), list(_), test_name()}].
+-spec groups() -> [{group_name(), list(_), [test_name()]}].
 groups() ->
     [
         {default_group, [parallel], [
@@ -679,8 +679,14 @@ events_sink_kafka_sent_test(_C) ->
             ok = test_beat(#mg_core_events_sink_kafka_sent{
                 name = Name,
                 namespace = ?NS,
+                machine_id = <<"ID">>,
+                request_context = null,
+                deadline = undefined,
                 encode_duration = erlang:convert_time_unit(DurationMs, millisecond, native),
-                send_duration = erlang:convert_time_unit(DurationMs, millisecond, native)
+                send_duration = erlang:convert_time_unit(DurationMs, millisecond, native),
+                data_size = 0,
+                partition = 0,
+                offset = 0
             }),
             Counter = prometheus_counter:value(mg_events_sink_sent_total, [?NS, Name]),
             {BucketsHits, _} =
