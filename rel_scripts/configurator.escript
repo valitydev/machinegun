@@ -193,25 +193,31 @@ consul_client(Name, YamlConfig) ->
     }.
 
 how_are_you(YamlConfig) ->
-    Publishers = hay_statsd_publisher(YamlConfig),
-    [
-        {metrics_publishers, Publishers},
-        {metrics_handlers, [
-            hay_vm_handler,
-            hay_cgroup_handler
-        ]}
-    ].
+    choose(
+        hay_enabled(YamlConfig),
+        [
+            {metrics_publishers, hay_statsd_publisher(YamlConfig)},
+            {metrics_handlers, [
+                hay_vm_handler,
+                hay_cgroup_handler
+            ]}
+        ],
+        []
+    ).
 
 prometheus(_YamlConfig) ->
     [
         {collectors, [default]}
     ].
 
+hay_enabled(YamlConfig) ->
+    conf_with([metrics, publisher, statsd, host], YamlConfig, false, true).
+
 hay_statsd_publisher(YamlConfig) ->
     conf_with([metrics, publisher, statsd], YamlConfig, [], fun (Config) -> [
         {hay_statsd_publisher, #{
             key_prefix => <<(service_name(YamlConfig))/binary, ".">>,
-            host => ?C:utf_bin(?C:conf([host], Config, "localhost")),
+            host => ?C:conf([host], Config),
             port => ?C:conf([port], Config, 8125),
             interval => 15000
         }}
@@ -227,6 +233,9 @@ pulse(YamlConfig) ->
     MaxLength = ?C:conf([logging, formatter, max_length], YamlConfig, 1000),
     MaxPrintable = ?C:conf([logging, formatter, max_printable_string_length], YamlConfig, 1000),
     {machinegun_pulse, #{
+        hay_options => #{
+            enabled => hay_enabled(YamlConfig)
+        },
         woody_event_handler_options => #{
             formatter_opts => #{
                 max_length => MaxLength,
@@ -632,3 +641,8 @@ conf_with(YamlConfigPath, YamlConfig, Default, FunOrVal) ->
         Value when is_function(FunOrVal) -> FunOrVal(Value);
         _Value -> FunOrVal
     end.
+
+choose(true, Then, _) ->
+    Then;
+choose(false, _, Else) ->
+    Else.
