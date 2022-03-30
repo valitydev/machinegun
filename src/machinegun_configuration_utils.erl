@@ -19,6 +19,7 @@
 -include_lib("kernel/include/file.hrl").
 
 -export([parse_yaml_config/1]).
+-export([parse_yaml/1]).
 -export([write_file/2]).
 -export([write_file/3]).
 -export([print_sys_config/1]).
@@ -77,6 +78,12 @@
 parse_yaml_config(Filename) ->
     {ok, _} = application:ensure_all_started(yamerl),
     [Config] = yamerl_constr:file(Filename, [str_node_as_binary]),
+    Config.
+
+-spec parse_yaml(binary()) -> yaml_config().
+parse_yaml(String) ->
+    {ok, _} = application:ensure_all_started(yamerl),
+    [Config] = yamerl_constr:string(String, [str_node_as_binary]),
     Config.
 
 -spec write_file(filename(), iodata()) -> ok.
