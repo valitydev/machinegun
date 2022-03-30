@@ -3,7 +3,7 @@
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
--type testgen() :: fun().
+-type testgen() :: {_ID, fun(() -> _)}.
 
 -spec test() -> _.
 
