@@ -17,8 +17,8 @@ COPY . /build/
 
 # Build the release
 WORKDIR /build
-RUN rebar3 compile
-RUN rebar3 as prod release
+RUN rebar3 compile \
+    && rebar3 as prod release
 
 # Make a runner image
 FROM docker.io/library/erlang:${OTP_VERSION}-slim
