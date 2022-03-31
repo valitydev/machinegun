@@ -65,7 +65,7 @@
     | vm_flag_name()
 ].
 -type vm_flag_name() :: atom() | binary().
--type vm_flag_value() :: atom() | binary() | integer().
+-type vm_flag_value() :: atom() | iodata() | integer().
 
 -type sys_config() :: [{atom, term()}].
 -type erl_inetrc() :: [{atom, term()}].
