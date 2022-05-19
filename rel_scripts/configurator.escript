@@ -406,7 +406,12 @@ storage(NS, YamlConfig) ->
                 },
                 batching => #{
                     concurrency_limit   => ?C:conf([storage, batch_concurrency_limit], YamlConfig, PoolSize)
-                }
+                },
+                sidecar => choose(
+                    hay_enabled(YamlConfig),
+                    {machinegun_riak_hay, #{}},
+                    {machinegun_riak_prometheus, #{}}
+                )
             }}
     end.
 

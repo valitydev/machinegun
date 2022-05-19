@@ -30,6 +30,7 @@
 -export([build_storage/2]).
 
 -export([stop_wait_all/3]).
+-export([flush/0]).
 
 -export([handle_beat/2]).
 
@@ -117,6 +118,13 @@ await_stop([], _Reason, TRef) ->
     receive
         {timeout, TRef, _} -> ok
     after 0 -> ok
+    end.
+
+-spec flush() -> [term()].
+flush() ->
+    receive
+        Anything -> [Anything | flush()]
+    after 0 -> []
     end.
 
 %%
