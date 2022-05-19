@@ -136,11 +136,20 @@ logging:
     formatter:
         max_length: 1000
         max_printable_string_length: 80
+
+# Metrics publishing settings.
+#
+# Prometheus metrics are enabled unconditionally. Setup statsd publisher if
+# you want to proactively push metrics to a statsd-compatible service.
+# Also note that due to a unfortunate shortcoming enabling statsd publisher
+# will turn off reporting of some Riak connection pool related prometheus
+# metrics.
 metrics:
     publisher:
         statsd:
             host: "localhost"
             port: 8125
+
 namespaces:
     mg_test_ns:
         # only for testing, default 0

@@ -409,6 +409,9 @@ storage(NS, YamlConfig) ->
                 },
                 sidecar => choose(
                     hay_enabled(YamlConfig),
+                    % NOTE
+                    % Ideally we want both here but this is too convoluted to setup. One usually want
+                    % only one metrics provider anyway, not both.
                     {machinegun_riak_hay, #{}},
                     {machinegun_riak_prometheus, #{}}
                 )
