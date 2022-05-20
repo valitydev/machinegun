@@ -32,10 +32,6 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
-%% pooler callbacks
-
--export([update_or_create/4]).
-
 %% Types
 
 -type options() :: #{
@@ -61,10 +57,7 @@
 % -type metric_key() :: how_are_you:metric_key().
 % -type metric_value() :: how_are_you:metric_value().
 % -type metrics() :: [metric()].
--type bin_type() :: machinegun_hay_utils:bin_type().
 -type pooler_metrics() :: [{atom(), number()}].
-
--type pooler_metric_type() :: counter | histogram | history | meter.
 
 %% API
 
@@ -119,22 +112,6 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, _State, _Extra) ->
     {error, noimpl}.
 
-%% pooler callbacks
-
--spec update_or_create([binary()], number(), pooler_metric_type(), []) -> ok.
-update_or_create(Key, Value, counter, []) ->
-    {ok, {NS, Type, MetricName}} = decode_key(Key),
-    ok = hay_metrics:push(create_hay_inc(rebuild_hay_key(NS, Type, MetricName), Value));
-update_or_create(_Key, _Value, meter, []) ->
-    ok;
-update_or_create(_Key, _Value, history, []) ->
-    ok;
-update_or_create(Key, Value, histogram, []) ->
-    {ok, {NS, Type, MetricName}} = decode_key(Key),
-    ok = hay_metrics:push(create_hay_bin_inc(rebuild_hay_key(NS, Type, MetricName), queue_length, Value));
-update_or_create(Key, Value, Type, []) ->
-    logger:warning("Unexpected pool metric ~p ~p=~p", [Type, Key, Value]).
-
 %% internal
 
 -spec restart_timer(state()) -> state().
@@ -171,35 +148,3 @@ push_hay_metrics(#state{namespace = NS, storage_type = Type}, Metrics) ->
     KeyPrefix = [mg, storage, NS, Type, pool],
     HayMetrics = [how_are_you:metric_construct(gauge, [KeyPrefix, Key], Value) || {Key, Value} <- Metrics],
     machinegun_hay_utils:push(HayMetrics).
-
--spec create_hay_inc(how_are_you:metric_key(), non_neg_integer()) -> how_are_you:metric().
-create_hay_inc(Key, Number) ->
-    machinegun_hay_utils:create_inc(Key, Number).
-
--spec create_hay_bin_inc(how_are_you:metric_key(), bin_type(), number()) -> how_are_you:metric().
-create_hay_bin_inc(KeyPrefix, BinType, Value) ->
-    machinegun_hay_utils:create_bin_inc(KeyPrefix, BinType, Value).
-
-%% see https://github.com/seth/pooler/blob/9c28fb479f9329e2a1644565a632bc222780f1b7/src/pooler.erl#L877
-%% for key format details
--spec decode_key([binary()]) -> {ok, {mg_core:ns(), storage_type(), binary()}}.
-decode_key([<<"pooler">>, PoolName, MetricName]) ->
-    {ok, {NS, Type}} = try_decode_pool_name(PoolName),
-    {ok, {NS, Type, MetricName}}.
-
--spec rebuild_hay_key(mg_core:ns(), storage_type(), binary()) -> how_are_you:metric_key().
-rebuild_hay_key(NS, Type, MetricName) ->
-    [mg, storage, NS, Type, pool, MetricName].
-
--spec try_decode_pool_name(binary()) -> {ok, {mg_core:ns(), storage_type()}} | {error, _Details}.
-try_decode_pool_name(PoolName) ->
-    %% TODO: Try to pass options through `pooler` metric mod option instead of pool name parsing
-    try erlang:binary_to_term(base64:decode(PoolName), [safe]) of
-        {NS, Module, Type} when is_binary(NS), is_atom(Type), is_atom(Module) ->
-            {ok, {NS, Type}};
-        Other ->
-            {error, {unexpected_name_format, Other}}
-    catch
-        error:Error ->
-            {error, {not_bert, Error, PoolName}}
-    end.
