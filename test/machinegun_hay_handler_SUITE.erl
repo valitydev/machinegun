@@ -133,7 +133,7 @@ init_per_group(GroupName, C) ->
         {automaton_options, #{
             url => "http://localhost:8022",
             ns => ?NS,
-            retry_strategy => undefined
+            retry_strategy => genlib_retry:linear(5, 1000)
         }},
         {processor_pid, ProcessorPid}
         | C1
