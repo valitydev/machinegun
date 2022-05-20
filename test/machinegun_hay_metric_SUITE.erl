@@ -21,11 +21,8 @@
 
 %% tests descriptions
 -export([all/0]).
--export([groups/0]).
 -export([init_per_suite/1]).
 -export([end_per_suite/1]).
--export([init_per_group/2]).
--export([end_per_group/2]).
 
 -export([offset_bin_metric_test/1]).
 -export([fraction_and_queue_bin_metric_test/1]).
@@ -36,21 +33,16 @@
 %%
 %% tests descriptions
 %%
--type group_name() :: atom().
 -type test_name() :: atom().
 -type config() :: [{atom(), _}].
 
--spec all() -> [test_name() | {group, group_name()}].
+-spec all() -> [test_name()].
 all() ->
     [
         offset_bin_metric_test,
         fraction_and_queue_bin_metric_test,
         duration_bin_metric_test
     ].
-
--spec groups() -> [{group_name(), list(_), test_name()}].
-groups() ->
-    [].
 
 %%
 %% starting/stopping
@@ -64,31 +56,11 @@ init_per_suite(C) ->
             {metrics_handlers, []}
         ]}
     ]),
-
-    [
-        {apps, Apps},
-        {automaton_options, #{
-            url => "http://localhost:8022",
-            ns => ?NS,
-            retry_strategy => undefined
-        }},
-        {event_sink_options, "http://localhost:8022"}
-        | C
-    ].
+    [{apps, Apps} | C].
 
 -spec end_per_suite(config()) -> ok.
 end_per_suite(C) ->
-    ok = application:set_env(how_are_you, metrics_publishers, []),
-    ok = application:set_env(how_are_you, metrics_handlers, []),
     machinegun_ct_helper:stop_applications(?config(apps, C)).
-
--spec init_per_group(group_name(), config()) -> config().
-init_per_group(_, C) ->
-    C.
-
--spec end_per_group(group_name(), config()) -> ok.
-end_per_group(_, _C) ->
-    ok.
 
 %% Tests
 
@@ -132,8 +104,6 @@ duration_bin_metric_test(_C) ->
         })
      || Sample <- Samples
     ].
-
-%% Utils
 
 %% Metrics utils
 
