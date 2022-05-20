@@ -24,7 +24,9 @@
 -export([publish_metrics/2]).
 
 %% API
+-export([select/0]).
 -export([lookup/1]).
+-export([lookup/2]).
 
 %% Types
 
@@ -72,10 +74,18 @@ publish_metrics(Fold, #state{ets = Ets} = State) ->
     ),
     {ok, State}.
 
+-spec select() -> [how_are_you:metric()].
+select() ->
+    ets:tab2list(?ETS_NAME).
+
 -spec lookup(how_are_you:metric_key()) -> how_are_you:metric_value() | undefined.
 lookup(Key) ->
+    lookup(gauge, Key).
+
+-spec lookup(how_are_you:metric_type(), how_are_you:metric_key()) -> how_are_you:metric_value() | undefined.
+lookup(Type, Key) ->
     % Convert key to hay internal format
-    EKey = hay_metrics:key(how_are_you:metric_construct(gauge, Key, 0)),
+    EKey = hay_metrics:key(how_are_you:metric_construct(Type, Key, 0)),
     case ets:lookup(?ETS_NAME, EKey) of
         [#metric{value = Value}] ->
             Value;
