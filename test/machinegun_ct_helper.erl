@@ -94,7 +94,7 @@ riak_ready() ->
             ok;
         Error ->
             Error
-        end.
+    end.
 
 %%
 
