@@ -88,6 +88,7 @@ init_per_group(GroupName, C) ->
     Storage =
         case GroupName of
             riak ->
+                ok = machinegun_ct_helper:await_ready(fun machinegun_ct_helper:riak_ready/0),
                 {mg_core_storage_riak, #{
                     host => "riakdb",
                     port => 8087,

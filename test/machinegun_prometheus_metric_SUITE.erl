@@ -765,6 +765,7 @@ events_sink_kafka_sent_test(_C) ->
 
 -spec riak_pool_collector_test(config()) -> _.
 riak_pool_collector_test(_C) ->
+    ok = machinegun_ct_helper:await_ready(fun machinegun_ct_helper:riak_ready/0),
     Storage =
         {mg_core_storage_riak, #{
             name => {?NS, caller, type},
