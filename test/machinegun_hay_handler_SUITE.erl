@@ -70,11 +70,12 @@ groups() ->
 %%
 -spec init_per_suite(config()) -> config().
 init_per_suite(C) ->
-    C.
+    Apps = machinegun_ct_helper:start_applications([cowboy]),
+    [{suite_apps, Apps} | C].
 
 -spec end_per_suite(config()) -> ok.
-end_per_suite(_C) ->
-    ok.
+end_per_suite(C) ->
+    machinegun_ct_helper:stop_applications(?config(suite_apps, C)).
 
 -spec init_per_group(group_name(), config()) -> config().
 init_per_group(with_gproc, C) ->
@@ -109,17 +110,8 @@ init_per_group(GroupName, C) ->
         {registry, mg_core_procreg_gproc}
         | C
     ],
-    Config = machinegun_config(C1),
-    Apps = machinegun_ct_helper:start_applications([
-        {how_are_you, [
-            {metrics_publishers, [machinegun_test_hay_publisher]},
-            {metrics_handlers, [hay_vm_handler]}
-        ]},
-        {machinegun, Config}
-    ]),
-    {ok, ProcessorPid} = machinegun_test_processor:start(
-        {0, 0, 0, 0},
-        8023,
+    {ok, ProcessorPid, HandlerInfo} = machinegun_test_processor:start(
+        ?MODULE,
         genlib_map:compact(#{
             processor =>
                 {"/processor", #{
@@ -128,35 +120,41 @@ init_per_group(GroupName, C) ->
                 }}
         })
     ),
+    Config = machinegun_config(HandlerInfo, C1),
+    Apps = machinegun_ct_helper:start_applications([
+        {how_are_you, [
+            {metrics_publishers, [machinegun_test_hay_publisher]},
+            {metrics_handlers, [hay_vm_handler]}
+        ]},
+        {machinegun, Config}
+    ]),
     [
         {apps, Apps},
         {automaton_options, #{
             url => "http://localhost:8022",
             ns => ?NS,
-            retry_strategy => genlib_retry:linear(5, 1000)
+            retry_strategy => genlib_retry:linear(3, 1)
         }},
         {processor_pid, ProcessorPid}
         | C1
     ].
 
 -spec end_per_group(group_name(), config()) -> _.
-end_per_group(base, C) ->
+end_per_group(GroupName, C) when GroupName == base; GroupName == riak ->
     ok = proc_lib:stop(?config(processor_pid, C)),
-    machinegun_ct_helper:stop_applications(?config(apps, C));
-end_per_group(riak, C) ->
     machinegun_ct_helper:stop_applications(?config(apps, C));
 end_per_group(_, C) ->
     machinegun_ct_helper:stop_applications(?config(group_apps, C)).
 
--spec machinegun_config(config()) -> list().
-machinegun_config(C) ->
+-spec machinegun_config(machinegun_test_processor:handler_info(), config()) -> list().
+machinegun_config(#{endpoint := {IP, Port}}, C) ->
     [
         {woody_server, #{ip => {0, 0, 0, 0}, port => 8022}},
         {namespaces, #{
             ?NS => #{
                 storage => storage(C),
                 processor => #{
-                    url => <<"http://localhost:8023/processor">>,
+                    url => genlib:format("http://~s:~p/processor", [inet:ntoa(IP), Port]),
                     transport_opts => #{pool => ns, max_connections => 100}
                 },
                 worker => #{
