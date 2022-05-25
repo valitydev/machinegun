@@ -91,6 +91,7 @@ woody_server:
     ip: "::"
     port: 8022
     http_keep_alive_timeout: 60s
+    shutdown_timeout: 0
 
 # Distributed machine registry settings.
 #
