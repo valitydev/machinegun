@@ -154,6 +154,7 @@ namespaces:
         timer_processing_timeout: 60s
         reschedule_timeout: 60s
         hibernate_timeout: 5s
+        shutdown_timeout: 1s # worker shutdown timeout
         unload_timeout: 60s
         processor:
             url: http://localhost:8022/processor

@@ -418,7 +418,8 @@ namespace({Name, NSYamlConfig}, YamlConfig) ->
                 registry          => procreg(YamlConfig),
                 worker_options    => #{
                     hibernate_timeout => Timeout(hibernate_timeout,  <<"5s">>),
-                    unload_timeout    => Timeout(unload_timeout   , <<"60s">>)
+                    unload_timeout    => Timeout(unload_timeout   , <<"60s">>),
+                    shutdown_timeout  => Timeout(shutdown_timeout ,  <<"1s">>)
                 }
             }),
             default_processing_timeout => Timeout(default_processing_timeout, <<"30s">>),
