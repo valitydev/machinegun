@@ -289,7 +289,7 @@ machinegun(YamlConfig) ->
     ].
 
 woody_server(YamlConfig) ->
-    #{
+    maps:merge(#{
         ip       => ?C:ip(?C:conf([woody_server, ip], YamlConfig, <<"::">>)),
         port     => ?C:conf([woody_server, port], YamlConfig, 8022),
         transport_opts => #{
@@ -305,7 +305,9 @@ woody_server(YamlConfig) ->
         limits   => genlib_map:compact(#{
             max_heap_size   => ?C:maybe(fun ?C:mem_words/1, ?C:conf([limits, process_heap], YamlConfig, undefined))
         })
-    }.
+    }, genlib_map:compact(#{
+        shutdown_timeout => ?C:conf([woody_server, shutdown_timeout], YamlConfig, undefined),
+    })).
 
 health_check(YamlConfig) ->
     lists:foldl(
