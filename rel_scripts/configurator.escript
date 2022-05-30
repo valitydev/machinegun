@@ -289,28 +289,24 @@ machinegun(YamlConfig) ->
     ].
 
 woody_server(YamlConfig) ->
-    maps:merge(
-        #{
-            ip       => ?C:ip(?C:conf([woody_server, ip], YamlConfig, <<"::">>)),
-            port     => ?C:conf([woody_server, port], YamlConfig, 8022),
-            transport_opts => #{
-                % same as ranch defaults
-                max_connections => ?C:conf([woody_server, max_concurrent_connections], YamlConfig, 1024)
-            },
-            protocol_opts => #{
-                request_timeout => ?C:milliseconds(?C:conf([woody_server, http_keep_alive_timeout], YamlConfig, <<"5s">>)),
-                % idle_timeout must be greater then any possible deadline
-                idle_timeout    => ?C:milliseconds(?C:conf([woody_server, idle_timeout], YamlConfig, <<"infinity">>)),
-                logger          => logger
-            },
-            limits   => genlib_map:compact(#{
-                max_heap_size   => ?C:maybe(fun ?C:mem_words/1, ?C:conf([limits, process_heap], YamlConfig, undefined))
-            })
+    #{
+        ip       => ?C:ip(?C:conf([woody_server, ip], YamlConfig, <<"::">>)),
+        port     => ?C:conf([woody_server, port], YamlConfig, 8022),
+        transport_opts => #{
+            % same as ranch defaults
+            max_connections => ?C:conf([woody_server, max_concurrent_connections], YamlConfig, 1024)
         },
-        genlib_map:compact(#{
-            shutdown_timeout => ?C:conf([woody_server, shutdown_timeout], YamlConfig, undefined),
-        })
-    ).
+        protocol_opts => #{
+            request_timeout => ?C:milliseconds(?C:conf([woody_server, http_keep_alive_timeout], YamlConfig, <<"5s">>)),
+            % idle_timeout must be greater then any possible deadline
+            idle_timeout    => ?C:milliseconds(?C:conf([woody_server, idle_timeout], YamlConfig, <<"infinity">>)),
+            logger          => logger
+        },
+        limits   => genlib_map:compact(#{
+            max_heap_size   => ?C:maybe(fun ?C:mem_words/1, ?C:conf([limits, process_heap], YamlConfig, undefined))
+        }),
+        shutdown_timeout => ?C:milliseconds(?C:conf([woody_server, shutdown_timeout], YamlConfig, <<"5s">>))
+    }.
 
 health_check(YamlConfig) ->
     lists:foldl(
@@ -419,7 +415,7 @@ namespace({Name, NSYamlConfig}, YamlConfig) ->
                 worker_options    => #{
                     hibernate_timeout => Timeout(hibernate_timeout,  <<"5s">>),
                     unload_timeout    => Timeout(unload_timeout   , <<"60s">>),
-                    shutdown_timeout  => Timeout(shutdown_timeout ,  <<"1s">>)
+                    shutdown_timeout  => Timeout(shutdown_timeout ,  <<"5s">>)
                 }
             }),
             default_processing_timeout => Timeout(default_processing_timeout, <<"30s">>),
