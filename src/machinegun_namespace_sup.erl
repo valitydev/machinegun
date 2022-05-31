@@ -16,27 +16,27 @@
 
 -module(machinegun_namespace_sup).
 
--type options() :: [mg_core_events_machine:options()].
+-type namespaces() :: [mg_core_events_machine:options()].
 
--export_type([options/0]).
+-export_type([namespaces/0]).
 
 -export([child_spec/2]).
 -export([start_link/2]).
 
 %%
 
--spec child_spec(options(), _ChildID) -> supervisor:child_spec().
-child_spec(Options, ChildID) ->
+-spec child_spec(namespaces(), _ChildID) -> supervisor:child_spec().
+child_spec(Namespaces, ChildID) ->
     #{
         id => ChildID,
-        start => {?MODULE, start_link, [Options, ChildID]},
+        start => {?MODULE, start_link, [Namespaces, ChildID]},
         restart => permanent,
         type => supervisor
     }.
 
--spec start_link(options(), _ChildID) -> mg_core_utils:gen_start_ret().
-start_link(Options, ChildID) ->
-    StartRet = mg_core_utils_supervisor_wrapper:start_link(
+-spec start_link(namespaces(), _ChildID) -> mg_core_utils:gen_start_ret().
+start_link(Namespaces, ChildID) ->
+    {ok, SupPid} = mg_core_utils_supervisor_wrapper:start_link(
         #{strategy => simple_one_for_one},
         [
             #{
@@ -47,19 +47,16 @@ start_link(Options, ChildID) ->
             }
         ]
     ),
-    case StartRet of
-        {ok, SupPid} ->
-            start_namespace_children(SupPid, Options);
-        Other ->
-            Other
-    end.
+    start_namespace_children(SupPid, Namespaces).
 
--spec start_namespace_children(pid(), options()) -> mg_core_utils:gen_start_ret().
+-spec start_namespace_children(pid(), namespaces()) -> mg_core_utils:gen_start_ret().
 start_namespace_children(SupPid, []) ->
     {ok, SupPid};
-start_namespace_children(SupPid, [NsOptions | Rest]) ->
-    case supervisor:start_child(SupPid, [NsOptions]) of
+start_namespace_children(SupPid, [Namespace | Rest]) ->
+    case supervisor:start_child(SupPid, [Namespace]) of
         {ok, _} -> start_namespace_children(SupPid, Rest);
         {ok, _, _} -> start_namespace_children(SupPid, Rest);
-        {error, Reason} -> {error, {start_child, Reason}}
+        {error, Reason} ->
+            true = exit(SupPid, shutdown),
+            {error, {start_child, Reason}}
     end.
