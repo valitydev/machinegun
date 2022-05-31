@@ -54,8 +54,10 @@ start_namespace_children(SupPid, []) ->
     {ok, SupPid};
 start_namespace_children(SupPid, [Namespace | Rest]) ->
     case supervisor:start_child(SupPid, [Namespace]) of
-        {ok, _} -> start_namespace_children(SupPid, Rest);
-        {ok, _, _} -> start_namespace_children(SupPid, Rest);
+        {ok, _} ->
+            start_namespace_children(SupPid, Rest);
+        {ok, _, _} ->
+            start_namespace_children(SupPid, Rest);
         {error, Reason} ->
             true = exit(SupPid, shutdown),
             {error, {start_child, Reason}}
