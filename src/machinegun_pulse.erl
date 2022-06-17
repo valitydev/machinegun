@@ -33,7 +33,7 @@
 
 -type options() :: #{
     woody_event_handler_options => woody_event_handler:options(),
-    kafka_lifecycle_options => machinegun_pulse_kafka_lifecycle:options()
+    lifecycle_kafka_options => machinegun_pulse_lifecycle_kafka:options()
 }.
 
 -export_type([beat/0]).
@@ -47,4 +47,18 @@
 handle_beat(Options, Beat) ->
     ok = machinegun_pulse_log:handle_beat(maps:get(woody_event_handler_options, Options, #{}), Beat),
     ok = machinegun_pulse_prometheus:handle_beat(#{}, Beat),
-    ok = machinegun_pulse_kafka_lifecycle:handle_beat(maps:get(kafka_lifecycle_options, Options, undefined), Beat).
+    ok = maybe_handle_lifecycle_kafka(Options, Beat).
+
+%%
+%% Internal
+%%
+
+-spec maybe_handle_lifecycle_kafka(options(), beat()) -> ok.
+maybe_handle_lifecycle_kafka(Options, Beat) ->
+    case maps:get(lifecycle_kafka_options, Options, undefined) of
+        undefined ->
+            %% kafka lifecycle pulse is disabled
+            ok;
+        KafkaOptions ->
+            machinegun_pulse_lifecycle_kafka:handle_beat(KafkaOptions, Beat)
+    end.

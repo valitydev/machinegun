@@ -14,10 +14,9 @@
 %%% limitations under the License.
 %%%
 
--module(machinegun_pulse_kafka_lifecycle).
+-module(machinegun_pulse_lifecycle_kafka).
 
 -include_lib("machinegun_core/include/pulse.hrl").
--include_lib("machinegun_woody_api/include/pulse.hrl").
 
 %% mg_pulse handler
 -behaviour(mg_core_pulse).
@@ -43,10 +42,9 @@
 %% mg_pulse handler
 %%
 
--spec handle_beat(options() | undefined, beat()) -> ok.
-handle_beat(undefined, _) ->
-    ok;
+-spec handle_beat(options(), beat()) -> ok.
 handle_beat(Options, Beat) when
+    %% We only support a subset of beats
     is_record(Beat, mg_core_machine_lifecycle_created) orelse
         is_record(Beat, mg_core_machine_lifecycle_failed) orelse
         is_record(Beat, mg_core_machine_lifecycle_removed)
@@ -54,7 +52,7 @@ handle_beat(Options, Beat) when
     #{client := Client, topic := Topic, encoder := Encoder} = Options,
     {SourceNS, SourceID, Event} = get_beat_data(Beat),
     Batch = encode(Encoder, SourceNS, SourceID, Event),
-    {ok, _Partition, _Offset} = produce(Client, Topic, event_key(SourceNS, SourceID), Batch),
+    ok = produce(Client, Topic, event_key(SourceNS, SourceID), Batch),
     ok;
 handle_beat(_, _) ->
     ok.
@@ -87,13 +85,14 @@ encode(Encoder, SourceNS, SourceID, Event) ->
     ].
 
 -spec produce(brod:client(), brod:topic(), brod:key(), brod:batch_input()) ->
-    {ok, brod:partition(), brod:offset()}.
+    ok.
 produce(Client, Topic, Key, Batch) ->
     case do_produce(Client, Topic, Key, Batch) of
-        {ok, _Partition, _Offset} = Result ->
-            Result;
+        {ok, _Partition, _Offset} ->
+            ok;
         {error, Reason} ->
-            handle_produce_error(Reason)
+            _ = logger:warning("Failed to produce kafka lifecycle batch, reason: ~p", [Reason]),
+            ok
     end.
 
 -spec do_produce(brod:client(), brod:topic(), brod:key(), brod:batch_input()) ->
@@ -114,80 +113,6 @@ do_produce(Client, Topic, PartitionKey, Batch) ->
         exit:Reason ->
             {error, {exit, Reason}}
     end.
-
--spec handle_produce_error(atom()) -> no_return().
-handle_produce_error(timeout) ->
-    erlang:throw({transient, timeout});
-handle_produce_error({exit, {Reasons = [_ | _], _}}) ->
-    case lists:any(fun is_connectivity_reason/1, Reasons) of
-        true ->
-            erlang:throw({transient, {event_sink_unavailable, {connect_failed, Reasons}}});
-        false ->
-            erlang:error({?MODULE, {unexpected, Reasons}})
-    end;
-handle_produce_error({producer_down, Reason}) ->
-    erlang:throw({transient, {event_sink_unavailable, {producer_down, Reason}}});
-handle_produce_error(Reason) ->
-    KnownErrors = #{
-        % See https://kafka.apache.org/protocol.html#protocol_error_codes for kafka error details
-        client_down => transient,
-        unknown_server_error => unknown,
-        corrupt_message => transient,
-        unknown_topic_or_partition => transient,
-        leader_not_available => transient,
-        not_leader_for_partition => transient,
-        request_timed_out => transient,
-        broker_not_available => transient,
-        replica_not_available => transient,
-        message_too_large => misconfiguration,
-        stale_controller_epoch => transient,
-        network_exception => transient,
-        invalid_topic_exception => logic,
-        record_list_too_large => misconfiguration,
-        not_enough_replicas => transient,
-        not_enough_replicas_after_append => transient,
-        invalid_required_acks => transient,
-        topic_authorization_failed => misconfiguration,
-        cluster_authorization_failed => misconfiguration,
-        invalid_timestamp => logic,
-        unsupported_sasl_mechanism => misconfiguration,
-        illegal_sasl_state => logic,
-        unsupported_version => misconfiguration,
-        reassignment_in_progress => transient
-    },
-    case maps:find(Reason, KnownErrors) of
-        {ok, transient} ->
-            erlang:throw({transient, {event_sink_unavailable, Reason}});
-        {ok, misconfiguration} ->
-            erlang:throw({transient, {event_sink_misconfiguration, Reason}});
-        {ok, Other} ->
-            erlang:error({?MODULE, {Other, Reason}});
-        error ->
-            erlang:error({?MODULE, {unexpected, Reason}})
-    end.
-
--spec is_connectivity_reason(
-    {inet:hostname(), {inet:posix() | {failed_to_upgrade_to_ssl, _SSLError}, _ST}}
-) ->
-    boolean().
-is_connectivity_reason({_, {timeout, _ST}}) ->
-    true;
-is_connectivity_reason({_, {econnrefused, _ST}}) ->
-    true;
-is_connectivity_reason({_, {ehostunreach, _ST}}) ->
-    true;
-is_connectivity_reason({_, {enetunreach, _ST}}) ->
-    true;
-is_connectivity_reason({_, {nxdomain, _ST}}) ->
-    true;
-is_connectivity_reason({_, {{failed_to_upgrade_to_ssl, _SSLError}, _ST}}) ->
-    true;
-is_connectivity_reason({_, {{_, closed}, _ST}}) ->
-    true;
-is_connectivity_reason({_, {{_, timeout}, _ST}}) ->
-    true;
-is_connectivity_reason(_Reason) ->
-    false.
 
 -spec partition(non_neg_integer(), brod:key()) -> brod:partition().
 partition(PartitionsCount, Key) ->
