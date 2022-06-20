@@ -70,7 +70,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
 
   kafka1: &kafka-broker
-    image: wurstmeister/kafka:${KAFKA_VERSION}
+    image: docker.io/wurstmeister/kafka:${KAFKA_VERSION}
     depends_on:
       zookeeper:
         condition: service_healthy

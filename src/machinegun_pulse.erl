@@ -54,11 +54,8 @@ handle_beat(Options, Beat) ->
 %%
 
 -spec maybe_handle_lifecycle_kafka(options(), beat()) -> ok.
-maybe_handle_lifecycle_kafka(Options, Beat) ->
-    case maps:get(lifecycle_kafka_options, Options, undefined) of
-        undefined ->
-            %% kafka lifecycle pulse is disabled
-            ok;
-        KafkaOptions ->
-            machinegun_pulse_lifecycle_kafka:handle_beat(KafkaOptions, Beat)
-    end.
+maybe_handle_lifecycle_kafka(#{lifecycle_kafka_options := KafkaOptions}, Beat) ->
+    machinegun_pulse_lifecycle_kafka:handle_beat(KafkaOptions, Beat);
+maybe_handle_lifecycle_kafka(_Options, _Beat) ->
+    %% kafka lifecycle pulse is disabled
+    ok.

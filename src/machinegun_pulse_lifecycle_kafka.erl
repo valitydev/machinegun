@@ -98,7 +98,18 @@ produce(Client, Topic, Key, Batch) ->
 -spec do_produce(brod:client(), brod:topic(), brod:key(), brod:batch_input()) ->
     {ok, brod:partition(), brod:offset()} | {error, Reason :: any()}.
 do_produce(Client, Topic, PartitionKey, Batch) ->
-    try brod:get_partitions_count(Client, Topic) of
+    try
+        do_produce_unsafe(Client, Topic, PartitionKey, Batch)
+    catch
+        % Ultra safe
+        Error:Reason ->
+            {error, {caught, Error, Reason}}
+    end.
+
+-spec do_produce_unsafe(brod:client(), brod:topic(), brod:key(), brod:batch_input()) ->
+    {ok, brod:partition(), brod:offset()} | {error, Reason :: any()}.
+do_produce_unsafe(Client, Topic, PartitionKey, Batch) ->
+    case brod:get_partitions_count(Client, Topic) of
         {ok, PartitionsCount} ->
             Partition = partition(PartitionsCount, PartitionKey),
             case brod:produce_sync_offset(Client, Topic, Partition, PartitionKey, Batch) of
@@ -109,9 +120,6 @@ do_produce(Client, Topic, PartitionKey, Batch) ->
             end;
         {error, _Reason} = Error ->
             Error
-    catch
-        exit:Reason ->
-            {error, {exit, Reason}}
     end.
 
 -spec partition(non_neg_integer(), brod:key()) -> brod:partition().
