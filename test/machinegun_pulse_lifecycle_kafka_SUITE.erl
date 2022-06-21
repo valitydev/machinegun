@@ -35,7 +35,7 @@
 -define(SOURCE_NS, <<"source-ns">>).
 -define(SOURCE_ID, <<"source-id">>).
 -define(CLIENT, mg_kafka_client).
--define(BROKERS, [{"kafka1", 9092}, {"kafka2", 9092}, {"kafka3", 9092}]).
+-define(BROKERS, [{"kafka1", 9092}]).
 
 %%
 %% tests descriptions
