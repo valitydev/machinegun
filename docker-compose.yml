@@ -21,10 +21,6 @@ services:
         condition: service_started
       kafka1:
         condition: service_healthy
-      kafka2:
-        condition: service_healthy
-      kafka3:
-        condition: service_healthy
       consul0:
         condition: service_started
       consul1:
@@ -86,7 +82,6 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: OUTSIDE:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: OUTSIDE
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
 
   consul1: &consul-server
     image: docker.io/consul:${CONSUL_VERSION}
