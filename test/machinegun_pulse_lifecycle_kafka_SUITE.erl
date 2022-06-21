@@ -76,7 +76,7 @@ init_per_suite(C) ->
             configs => [],
             num_partitions => 1,
             assignments => [],
-            replication_factor => 2,
+            replication_factor => 3,
             name => ?TOPIC
         }
     ],
