@@ -86,6 +86,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: OUTSIDE:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: OUTSIDE
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
   kafka2:
     <<: *kafka-broker
     environment:
@@ -95,6 +96,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: OUTSIDE:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: OUTSIDE
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
   kafka3:
     <<: *kafka-broker
     environment:
@@ -104,6 +106,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: OUTSIDE:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: OUTSIDE
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
 
   consul1: &consul-server
     image: docker.io/consul:${CONSUL_VERSION}

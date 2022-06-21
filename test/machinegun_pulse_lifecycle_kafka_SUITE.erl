@@ -71,16 +71,18 @@ init_per_suite(C) ->
      || {App, AppConf} <- AppSpecs
     ]),
     %% Need to pre-create the topic
+    PartitionsCount = 1,
     TopicConfig = [
         #{
             configs => [],
-            num_partitions => 1,
+            num_partitions => PartitionsCount,
             assignments => [],
             replication_factor => 3,
             name => ?TOPIC
         }
     ],
     ok = brod:create_topics(?BROKERS, TopicConfig, #{timeout => 1000}),
+    {ok, PartitionsCount} = brod:get_partitions_count(?CLIENT, ?TOPIC),
     [{apps, Apps} | C].
 
 -spec end_per_suite(config()) -> ok.
