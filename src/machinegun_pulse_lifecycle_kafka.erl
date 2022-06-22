@@ -47,6 +47,7 @@ handle_beat(Options, Beat) when
     %% We only support a subset of beats
     is_record(Beat, mg_core_machine_lifecycle_created) orelse
         is_record(Beat, mg_core_machine_lifecycle_failed) orelse
+        is_record(Beat, mg_core_machine_lifecycle_repaired) orelse
         is_record(Beat, mg_core_machine_lifecycle_removed)
 ->
     #{client := Client, topic := Topic, encoder := Encoder} = Options,
@@ -64,6 +65,8 @@ get_beat_data(#mg_core_machine_lifecycle_created{namespace = NS, machine_id = ID
     {NS, ID, {machine_lifecycle_created, #{occurred_at => ts_now()}}};
 get_beat_data(#mg_core_machine_lifecycle_failed{namespace = NS, machine_id = ID, exception = Exception}) ->
     {NS, ID, {machine_lifecycle_failed, #{occurred_at => ts_now(), exception => Exception}}};
+get_beat_data(#mg_core_machine_lifecycle_repaired{namespace = NS, machine_id = ID}) ->
+    {NS, ID, {machine_lifecycle_repaired, #{occurred_at => ts_now()}}};
 get_beat_data(#mg_core_machine_lifecycle_removed{namespace = NS, machine_id = ID}) ->
     {NS, ID, {machine_lifecycle_removed, #{occurred_at => ts_now()}}}.
 

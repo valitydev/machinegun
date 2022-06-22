@@ -113,6 +113,12 @@ handle_known_beats_ok_test(_C) ->
                 exception = Exception,
                 deadline = mg_core_deadline:default()
             },
+            #mg_core_machine_lifecycle_repaired{
+                namespace = ?SOURCE_NS,
+                machine_id = ?SOURCE_ID,
+                request_context = null,
+                deadline = mg_core_deadline:default()
+            },
             #mg_core_machine_lifecycle_removed{
                 namespace = ?SOURCE_NS,
                 machine_id = ?SOURCE_ID,
@@ -125,6 +131,7 @@ handle_known_beats_ok_test(_C) ->
         [
             {?SOURCE_NS, ?SOURCE_ID, {machine_lifecycle_created, #{occurred_at := _}}},
             {?SOURCE_NS, ?SOURCE_ID, {machine_lifecycle_failed, #{occurred_at := _, exception := Exception}}},
+            {?SOURCE_NS, ?SOURCE_ID, {machine_lifecycle_repaired, #{occurred_at := _}}},
             {?SOURCE_NS, ?SOURCE_ID, {machine_lifecycle_removed, #{occurred_at := _}}}
         ],
         NewBeats
