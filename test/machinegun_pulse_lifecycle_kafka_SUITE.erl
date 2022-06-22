@@ -82,7 +82,6 @@ init_per_suite(C) ->
         }
     ],
     ok = brod:create_topics(?BROKERS, TopicConfig, #{timeout => 5000}),
-    _ = timer:sleep(5000),
     {ok, PartitionsCount} = brod:get_partitions_count(?CLIENT, ?TOPIC),
     [{apps, Apps} | C].
 
