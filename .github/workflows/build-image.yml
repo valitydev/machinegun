@@ -15,6 +15,16 @@ jobs:
   build-push:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+      # Precompile applications under `prod` profile
+      - run: rebar3 as prod compile
+      # Clean out those applications that MUST be compiled on the target system:
+      # 1. Applications that employ native code in the form of NIFs or port drivers.
+      - run: >
+          for app in $(grep -Rl -F 'port_specs' _build/prod/lib/*/rebar.config | cut -d'/' -f4)
+          do
+            rebar3 as prod clean --apps $app
+          done
       - uses: valitydev/action-deploy-docker@v2
         with:
           registry-username: ${{ github.actor }}
