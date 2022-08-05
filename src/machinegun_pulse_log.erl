@@ -99,6 +99,12 @@ format_beat(#mg_core_machine_lifecycle_transient_error{context = Ctx, exception 
         finish ->
             {warning, {"transient error ~p during ~p, retires exhausted", [Ctx, Reason]}, Context}
     end;
+format_beat(#mg_core_machine_notification_rescheduled{reason = {_, Reason, _}} = Beat, _Options) ->
+    Context = ?BEAT_TO_META(mg_core_machine_notification_rescheduled, Beat),
+    {warning, {"machine notification rescheduled ~p", [Reason]}, Context};
+format_beat(#mg_core_machine_notification_deleted{reason = {failed, {_, Reason, _}}} = Beat, _Options) ->
+    Context = ?BEAT_TO_META(mg_core_machine_notification_deleted, Beat),
+    {warning, {"machine notification failed ~p", [Reason]}, Context};
 format_beat(#mg_core_timer_lifecycle_rescheduled{target_timestamp = TS, attempt = Attempt} = Beat, _Options) ->
     Context = ?BEAT_TO_META(mg_core_timer_lifecycle_rescheduled, Beat),
     {info, {"machine rescheduled to ~s, attempt ~p", [format_timestamp(TS), Attempt]}, Context};
@@ -438,6 +444,8 @@ extract_meta(deadline, Deadline) when is_integer(Deadline) ->
     {deadline, mg_core_deadline:format(Deadline)};
 extract_meta(target_timestamp, Timestamp) ->
     {target_timestamp, format_timestamp(Timestamp)};
+extract_meta(new_target_timestamp, Timestamp) ->
+    {new_target_timestamp, format_timestamp(Timestamp)};
 extract_meta(exception, {Class, Reason, Stacktrace}) ->
     [
         {error, [
@@ -455,6 +463,12 @@ extract_meta(retry_action, _Other) ->
     [];
 extract_meta(machine_id, MachineID) ->
     {machine_id, MachineID};
+extract_meta(notification_id, NotifcationID) ->
+    {notification_id, NotifcationID};
+extract_meta(reason, {failed, {_, _, _} = Exception}) ->
+    extract_meta(exception, Exception);
+extract_meta(reason, {_, _, _} = Exception) ->
+    extract_meta(exception, Exception);
 extract_meta(namespace, NS) ->
     {machine_ns, NS};
 extract_meta(squad_member, Member) ->
