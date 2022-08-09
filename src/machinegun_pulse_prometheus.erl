@@ -282,12 +282,14 @@ dispatch_metrics(#mg_core_machine_process_finished{processor_impact = Impact, na
 % Notifications
 dispatch_metrics(#mg_core_machine_notification_created{namespace = NS}) ->
     ok = inc(mg_machine_notification_changes_total, [NS, created]);
-dispatch_metrics(#mg_core_machine_notification_rescheduled{namespace = NS}) ->
-    ok = inc(mg_machine_notification_changes_total, [NS, rescheduled]);
-dispatch_metrics(#mg_core_machine_notification_deleted{namespace = NS, reason = finished}) ->
-    ok = inc(mg_machine_notification_changes_total, [NS, succeeded]);
-dispatch_metrics(#mg_core_machine_notification_deleted{namespace = NS, reason = {failed, _}}) ->
-    ok = inc(mg_machine_notification_changes_total, [NS, failed]);
+dispatch_metrics(#mg_core_machine_notification_delivered{namespace = NS}) ->
+    ok = inc(mg_machine_notification_changes_total, [NS, delivery_success]);
+dispatch_metrics(#mg_core_machine_notification_delivery_error{namespace = NS, action = delete}) ->
+    ok = inc(mg_machine_notification_changes_total, [NS, delivery_error, delivery_impossible]);
+dispatch_metrics(#mg_core_machine_notification_delivery_error{namespace = NS, action = {reschedule, _}}) ->
+    ok = inc(mg_machine_notification_changes_total, [NS, delivery_error, temporary_unavailability]);
+dispatch_metrics(#mg_core_machine_notification_delivery_error{namespace = NS, action = ignore}) ->
+    ok = inc(mg_machine_notification_changes_total, [NS, delivery_error, operator_intervention_required]);
 % Timer lifecycle
 dispatch_metrics(#mg_core_timer_lifecycle_created{namespace = NS, target_timestamp = Timestamp}) ->
     ok = inc(mg_timer_lifecycle_changes_total, [NS, created]),
