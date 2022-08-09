@@ -457,7 +457,12 @@ extract_meta(retry_action, {wait, Timeout, NextStrategy}) ->
 extract_meta(retry_action, _Other) ->
     [];
 extract_meta(action, {reschedule, Timestamp}) ->
-    {action, {reschedule, format_timestamp(Timestamp)}};
+    [
+        {action, <<"reschedule">>},
+        {reschedule_time, format_timestamp(Timestamp)}
+    ];
+extract_meta(action, Action) ->
+    {action, genlib:to_binary(Action)};
 extract_meta(namespace, NS) ->
     {machine_ns, NS};
 extract_meta(squad_member, Member) ->
