@@ -188,11 +188,11 @@ namespaces:
         overseer: disabled
         notification:
             capacity: 1000
-            min_scan_delay: 1s
-            rescan_delay: 5s
-            scan_handicap: 10s
-            scan_cutoff: 4W
-            reschedule_time: 1s
+            rescan_delay: 5s # search for notification tasks in the db every x
+            min_scan_delay: 1s # if the search had a continuation, read the continuation after x amount of time
+            scan_handicap: 10s # only search for notification tasks that are older then x
+            scan_cutoff: 4W # only search for notification tasks that are younger then x
+            reschedule_time: 1s # reschedule notification deliveries that failed with temporary errors x amount of time into the future
         # maximum number of events that will be stored inside of machine state
         # must be non negative integer, default is 0
         event_stash_size: 5
