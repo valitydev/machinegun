@@ -186,6 +186,13 @@ namespaces:
             capacity: 500
             min_scan_delay: 10s
         overseer: disabled
+        notification:
+            capacity: 1000
+            min_scan_delay: 1s
+            rescan_delay: 5s
+            scan_handicap: 10s
+            scan_cutoff: 4W
+            reschedule_time: 1s
         # maximum number of events that will be stored inside of machine state
         # must be non negative integer, default is 0
         event_stash_size: 5
