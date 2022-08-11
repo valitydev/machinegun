@@ -482,7 +482,7 @@ namespace_schedulers(NSYamlConfig) ->
                 #{};
             NotificationConfig ->
                 #{
-                    notification => notification_scheduler(0, NotificationConfig)
+                    notification => notification_scheduler(1, NotificationConfig)
                 }
         end
     ],
@@ -529,10 +529,10 @@ notification_scheduler(Share, Config) ->
     (scheduler(Share, Config))#{
         capacity        => ?C:conf([capacity], Config, 1000),
         min_scan_delay  => timeout(min_scan_delay, Config, <<"1s">>, ms),
-        rescan_delay    => timeout(scan_interval, Config, <<"5s">>, ms),
+        rescan_delay    => timeout(scan_interval, Config, <<"1m">>, ms),
         scan_handicap   => timeout(scan_handicap, Config, <<"10s">>, ms),
         scan_cutoff     => timeout(scan_cutoff, Config, <<"4W">>, ms),
-        reschedule_time => timeout(reschedule_time, Config, <<"1s">>, ms)
+        reschedule_time => timeout(reschedule_time, Config, <<"5s">>, ms)
     }.
 
 timeout(Name, Config, Default, Unit) ->
