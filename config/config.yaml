@@ -157,6 +157,17 @@ logging:
     formatter:
         max_length: 1000
         max_printable_string_length: 80
+        level_map:
+            # FIXME clean up example
+            'emergency': 'ERROR' # 'EMERGENCY'
+            'alert': 'ERROR' # 'ALERT'
+            'critical': 'ERROR' # 'CRITICAL'
+            'error': 'ERROR'
+            'warning': 'WARN' # 'WARNING'
+            'notice': 'INFO' # 'NOTICE'
+            'info': 'INFO'
+            'debug': 'DEBUG'
+            # 'TRACE' ?
 
 namespaces:
     mg_test_ns:
