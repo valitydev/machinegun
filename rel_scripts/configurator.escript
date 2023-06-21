@@ -26,7 +26,7 @@ main([YamlConfigFilename, ConfigsPath]) ->
     {ok, [[Home]]} = init:get_argument(home),
     Preprocessors = [fun interpolate_envs/1],
     YamlConfig = lists:foldl(
-        fun(Proc, Config) -> Proc(Config) end,
+        fun (Proc, Config) -> Proc(Config) end,
         ?C:parse_yaml_config(YamlConfigFilename),
         Preprocessors
     ),
@@ -62,17 +62,17 @@ interpolate_envs(YamlConfig) ->
 %%
 sys_config(YamlConfig) ->
     [
-        {os_mon, os_mon(YamlConfig)},
+        {os_mon              , os_mon      (YamlConfig)},
         {kernel, [
-            {logger_level, logger_level(YamlConfig)},
-            {logger, logger(YamlConfig)}
+            {logger_level    , logger_level(YamlConfig)},
+            {logger          , logger      (YamlConfig)}
         ]},
-        {consuela, consuela(YamlConfig)},
-        {prometheus, prometheus(YamlConfig)},
-        {snowflake, snowflake(YamlConfig)},
-        {brod, brod(YamlConfig)},
-        {hackney, hackney(YamlConfig)},
-        {machinegun, machinegun(YamlConfig)}
+        {consuela            , consuela    (YamlConfig)},
+        {prometheus          , prometheus  (YamlConfig)},
+        {snowflake           , snowflake   (YamlConfig)},
+        {brod                , brod        (YamlConfig)},
+        {hackney             , hackney     (YamlConfig)},
+        {machinegun          , machinegun  (YamlConfig)}
     ].
 
 os_mon(_YamlConfig) ->
@@ -98,91 +98,80 @@ logger(YamlConfig) ->
         {handler, default, logger_std_h, #{
             level => debug,
             config => maps:merge(Out, #{
-                burst_limit_enable => ?C:conf([logging, burst_limit_enable], YamlConfig, true),
-                sync_mode_qlen => ?C:conf([logging, sync_mode_qlen], YamlConfig, 100),
+                burst_limit_enable => ?C:conf([logging, burst_limit_enable], YamlConfig,  true),
+                sync_mode_qlen => ?C:conf([logging, sync_mode_qlen], YamlConfig,  100),
                 drop_mode_qlen => ?C:conf([logging, drop_mode_qlen], YamlConfig, 1000),
-                flush_qlen => ?C:conf([logging, flush_qlen], YamlConfig, 2000)
+                flush_qlen     => ?C:conf([logging, flush_qlen],     YamlConfig, 2000)
             }),
-            formatter =>
-                {logger_logstash_formatter, #{
-                    chars_limit => ?C:conf([logging, formatter, max_length], YamlConfig, 1000),
-                    log_level_map =>
-                        conf_with([logging, formatter, level_map], YamlConfig, #{}, fun(LevelMap) ->
-                            maps:from_list(lists:map(fun log_level_tuple_to_atom/1, LevelMap))
-                        end)
-                }}
+            formatter => {logger_logstash_formatter, #{
+                chars_limit => ?C:conf([logging, formatter, max_length], YamlConfig, 1000),
+                log_level_map =>
+                    conf_with([logging, formatter, level_map], YamlConfig, #{}, fun (LevelMap) ->
+                        maps:from_list(lists:map(fun log_level_tuple_to_atom/1, LevelMap))
+                    end)
+            }}
         }}
     ].
 
 consuela(YamlConfig) ->
     lists:append([
-        conf_with([consuela, presence], YamlConfig, [], fun(PresenceConfig) ->
-            [
-                {presence, #{
-                    name => service_presence_name(YamlConfig),
-                    consul => consul_client(mg_consuela_presence, YamlConfig),
-                    shutdown => ?C:milliseconds(?C:conf([shutdown_timeout], PresenceConfig, <<"5s">>)),
-                    service_tags => tags([tags], PresenceConfig, []),
-                    session_opts => #{
-                        interval => ?C:seconds(?C:conf([check_interval], PresenceConfig, <<"5s">>)),
-                        pulse => mg_core_consuela_pulse_adapter:pulse(presence_session, pulse(YamlConfig))
-                    }
-                }}
-            ]
-        end),
-        conf_with([consuela, registry], YamlConfig, [], fun(RegConfig) ->
-            [
-                {registry, #{
-                    nodename => ?C:string(?C:conf([nodename], RegConfig, ?C:hostname())),
-                    namespace => ?C:conf([namespace], RegConfig, <<"mg">>),
-                    session => maps:merge(
-                        #{
-                            ttl => ?C:seconds(?C:conf([session_ttl], RegConfig, <<"30s">>)),
-                            lock_delay => ?C:seconds(?C:conf([session_lock_delay], RegConfig, <<"10s">>))
-                        },
-                        conf_with([consuela, presence], YamlConfig, #{}, fun(_) ->
-                            #{
-                                presence => service_presence_name(YamlConfig)
-                            }
-                        end)
-                    ),
-                    consul => consul_client(mg_consuela_registry, YamlConfig),
-                    shutdown => ?C:milliseconds(?C:conf([shutdown_timeout], RegConfig, <<"5s">>)),
-                    keeper => maps:merge(
-                        #{
-                            pulse => mg_core_consuela_pulse_adapter:pulse(session_keeper, pulse(YamlConfig))
-                        },
-                        conf_with([session_renewal_interval], RegConfig, #{}, fun(V) ->
-                            #{
-                                interval => ?C:seconds(V)
-                            }
-                        end)
-                    ),
-                    reaper => #{
-                        pulse => mg_core_consuela_pulse_adapter:pulse(zombie_reaper, pulse(YamlConfig))
+        conf_with([consuela, presence], YamlConfig, [], fun (PresenceConfig) -> [
+            {presence, #{
+                name      => service_presence_name(YamlConfig),
+                consul    => consul_client(mg_consuela_presence, YamlConfig),
+                shutdown  => ?C:milliseconds(?C:conf([shutdown_timeout], PresenceConfig, <<"5s">>)),
+                service_tags => tags([tags], PresenceConfig, []),
+                session_opts => #{
+                    interval => ?C:seconds(?C:conf([check_interval], PresenceConfig, <<"5s">>)),
+                    pulse    => mg_core_consuela_pulse_adapter:pulse(presence_session, pulse(YamlConfig))
+                }
+            }}
+        ] end),
+        conf_with([consuela, registry], YamlConfig, [], fun (RegConfig) -> [
+            {registry, #{
+                nodename  => ?C:string(?C:conf([nodename], RegConfig, ?C:hostname())),
+                namespace => ?C:conf([namespace], RegConfig, <<"mg">>),
+                session   => maps:merge(
+                    #{
+                        ttl        => ?C:seconds(?C:conf([session_ttl], RegConfig, <<"30s">>)),
+                        lock_delay => ?C:seconds(?C:conf([session_lock_delay], RegConfig, <<"10s">>))
                     },
-                    registry => #{
-                        pulse => mg_core_consuela_pulse_adapter:pulse(registry_server, pulse(YamlConfig))
-                    }
-                }}
-            ]
-        end),
-        conf_with([consuela, discovery], YamlConfig, [], fun(DiscoveryConfig) ->
-            [
-                {discovery, #{
-                    name => service_presence_name(YamlConfig),
-                    tags => tags([tags], DiscoveryConfig, tags([consuela, presence, tags], YamlConfig, [])),
-                    consul => consul_client(mg_consuela_discovery, YamlConfig),
-                    opts => #{
-                        interval => #{
-                            init => ?C:milliseconds(?C:conf([interval, init], DiscoveryConfig, <<"5s">>)),
-                            idle => ?C:milliseconds(?C:conf([interval, idle], DiscoveryConfig, <<"10m">>))
-                        },
-                        pulse => mg_core_consuela_pulse_adapter:pulse(discovery_server, pulse(YamlConfig))
-                    }
-                }}
-            ]
-        end)
+                    conf_with([consuela, presence], YamlConfig, #{}, fun (_) -> #{
+                        presence => service_presence_name(YamlConfig)
+                    } end)
+                ),
+                consul    => consul_client(mg_consuela_registry, YamlConfig),
+                shutdown  => ?C:milliseconds(?C:conf([shutdown_timeout], RegConfig, <<"5s">>)),
+                keeper    => maps:merge(
+                    #{
+                        pulse => mg_core_consuela_pulse_adapter:pulse(session_keeper, pulse(YamlConfig))
+                    },
+                    conf_with([session_renewal_interval], RegConfig, #{}, fun (V) -> #{
+                        interval => ?C:seconds(V)
+                    } end)
+                ),
+                reaper    => #{
+                    pulse => mg_core_consuela_pulse_adapter:pulse(zombie_reaper, pulse(YamlConfig))
+                },
+                registry  => #{
+                    pulse => mg_core_consuela_pulse_adapter:pulse(registry_server, pulse(YamlConfig))
+                }
+            }}
+        ] end),
+        conf_with([consuela, discovery], YamlConfig, [], fun (DiscoveryConfig) -> [
+            {discovery, #{
+                name      => service_presence_name(YamlConfig),
+                tags      => tags([tags], DiscoveryConfig, tags([consuela, presence, tags], YamlConfig, [])),
+                consul    => consul_client(mg_consuela_discovery, YamlConfig),
+                opts      => #{
+                    interval => #{
+                        init => ?C:milliseconds(?C:conf([interval, init], DiscoveryConfig,  <<"5s">>)),
+                        idle => ?C:milliseconds(?C:conf([interval, idle], DiscoveryConfig, <<"10m">>))
+                    },
+                    pulse => mg_core_consuela_pulse_adapter:pulse(discovery_server, pulse(YamlConfig))
+                }
+            }}
+        ] end)
     ]).
 
 tags(Path, Config, Defaults) ->
@@ -193,21 +182,20 @@ service_presence_name(YamlConfig) ->
 
 consul_client(Name, YamlConfig) ->
     ACLToken = conf_with(
-        [consul, acl_token_file],
-        YamlConfig,
+        [consul, acl_token_file], YamlConfig,
         undefined,
-        fun(V) -> {file, ?C:file(V, 8#600)} end
+        fun (V) -> {file, ?C:file(V, 8#600)} end
     ),
     #{
-        url => ?C:conf([consul, url], YamlConfig),
-        opts => genlib_map:compact(#{
+        url   => ?C:conf([consul, url], YamlConfig),
+        opts  => genlib_map:compact(#{
             datacenter => ?C:conf([consul, datacenter], YamlConfig, undefined),
-            acl => ACLToken,
+            acl        => ACLToken,
             transport_opts => genlib_map:compact(#{
                 pool =>
-                    ?C:conf([consul, pool], YamlConfig, Name),
+                    ?C:conf([consul, pool             ], YamlConfig, Name),
                 max_connections =>
-                    ?C:conf([consul, max_connections], YamlConfig, undefined),
+                    ?C:conf([consul, max_connections  ], YamlConfig, undefined),
                 max_response_size =>
                     ?C:conf([consul, max_response_size], YamlConfig, undefined),
                 connect_timeout =>
@@ -235,30 +223,27 @@ snowflake(YamlConfig) ->
 pulse(YamlConfig) ->
     MaxLength = ?C:conf([logging, formatter, max_length], YamlConfig, 1000),
     MaxPrintable = ?C:conf([logging, formatter, max_printable_string_length], YamlConfig, 1000),
-    LifecycleKafkaOptions = conf_with([lifecycle_pulse], YamlConfig, undefined, fun(LifecyclePulseConfig) ->
-        #{
-            topic => ?C:conf([topic], LifecyclePulseConfig),
-            client => ?C:atom(?C:conf([client], LifecyclePulseConfig)),
-            encoder => fun mg_woody_api_life_sink:serialize/3
-        }
-    end),
-    {machinegun_pulse,
-        genlib_map:compact(#{
-            woody_event_handler_options => #{
-                formatter_opts => #{
-                    max_length => MaxLength,
-                    max_printable_string_length => MaxPrintable
-                }
-            },
-            lifecycle_kafka_options => LifecycleKafkaOptions
-        })}.
+    LifecycleKafkaOptions = conf_with([lifecycle_pulse], YamlConfig, undefined, fun (LifecyclePulseConfig) -> #{
+        topic => ?C:conf([topic], LifecyclePulseConfig),
+        client => ?C:atom(?C:conf([client], LifecyclePulseConfig)),
+        encoder => fun mg_woody_api_life_sink:serialize/3
+    } end),
+    {machinegun_pulse, genlib_map:compact(#{
+        woody_event_handler_options => #{
+            formatter_opts => #{
+                max_length => MaxLength,
+                max_printable_string_length => MaxPrintable
+            }
+        },
+        lifecycle_kafka_options => LifecycleKafkaOptions
+    })}.
 
 brod(YamlConfig) ->
     Clients = ?C:conf([kafka], YamlConfig, []),
     [
         {clients, [
             {?C:atom(Name), brod_client(ClientConfig)}
-         || {Name, ClientConfig} <- Clients
+            || {Name, ClientConfig} <- Clients
         ]}
     ].
 
@@ -267,7 +252,7 @@ brod_client(ClientConfig) ->
     [
         {endpoints, [
             {?C:conf([host], Endpoint), ?C:conf([port], Endpoint)}
-         || Endpoint <- ?C:conf([endpoints], ClientConfig)
+            || Endpoint <- ?C:conf([endpoints], ClientConfig)
         ]},
         {restart_delay_seconds, 10},
         {auto_start_producers, true},
@@ -318,18 +303,18 @@ hackney(_YamlConfig) ->
 
 machinegun(YamlConfig) ->
     [
-        {woody_server, woody_server(YamlConfig)},
-        {health_check, health_check(YamlConfig)},
-        {quotas, quotas(YamlConfig)},
-        {namespaces, namespaces(YamlConfig)},
-        {event_sink_ns, event_sink_ns(YamlConfig)},
-        {pulse, pulse(YamlConfig)}
+        {woody_server   , woody_server   (YamlConfig)},
+        {health_check   , health_check   (YamlConfig)},
+        {quotas         , quotas         (YamlConfig)},
+        {namespaces     , namespaces     (YamlConfig)},
+        {event_sink_ns  , event_sink_ns  (YamlConfig)},
+        {pulse          , pulse          (YamlConfig)}
     ].
 
 woody_server(YamlConfig) ->
     #{
-        ip => ?C:ip(?C:conf([woody_server, ip], YamlConfig, <<"::">>)),
-        port => ?C:conf([woody_server, port], YamlConfig, 8022),
+        ip       => ?C:ip(?C:conf([woody_server, ip], YamlConfig, <<"::">>)),
+        port     => ?C:conf([woody_server, port], YamlConfig, 8022),
         transport_opts => #{
             % same as ranch defaults
             max_connections => ?C:conf([woody_server, max_concurrent_connections], YamlConfig, 1024)
@@ -337,11 +322,11 @@ woody_server(YamlConfig) ->
         protocol_opts => #{
             request_timeout => ?C:milliseconds(?C:conf([woody_server, http_keep_alive_timeout], YamlConfig, <<"5s">>)),
             % idle_timeout must be greater then any possible deadline
-            idle_timeout => ?C:milliseconds(?C:conf([woody_server, idle_timeout], YamlConfig, <<"infinity">>)),
-            logger => logger
+            idle_timeout    => ?C:milliseconds(?C:conf([woody_server, idle_timeout], YamlConfig, <<"infinity">>)),
+            logger          => logger
         },
-        limits => genlib_map:compact(#{
-            max_heap_size => ?C:maybe(fun ?C:mem_words/1, ?C:conf([limits, process_heap], YamlConfig, undefined))
+        limits   => genlib_map:compact(#{
+            max_heap_size   => ?C:maybe(fun ?C:mem_words/1, ?C:conf([limits, process_heap], YamlConfig, undefined))
         }),
         shutdown_timeout => ?C:milliseconds(?C:conf([woody_server, shutdown_timeout], YamlConfig, <<"5s">>))
     }.
@@ -351,14 +336,14 @@ health_check(YamlConfig) ->
         fun maps:merge/2,
         #{},
         [
-            conf_with([limits, disk], YamlConfig, #{}, fun(DiskConfig) ->
+            conf_with([limits, disk], YamlConfig, #{}, fun (DiskConfig) ->
                 DiskPath = ?C:string(?C:conf([path], DiskConfig, <<"/">>)),
                 #{disk => {erl_health, disk, [DiskPath, percent(?C:conf([value], DiskConfig))]}}
             end),
-            relative_memory_limit(YamlConfig, #{}, fun(TypeStr, Limit) ->
+            relative_memory_limit(YamlConfig, #{}, fun (TypeStr, Limit) ->
                 Type =
                     case TypeStr of
-                        <<"total">> -> total;
+                        <<"total">>   -> total;
                         <<"cgroups">> -> cg_memory
                     end,
                 #{memory => {erl_health, Type, [Limit]}}
@@ -372,7 +357,7 @@ quotas(YamlConfig) ->
     [
         #{
             name => <<"scheduler_tasks_total">>,
-            limit => #{value => SchedulerLimit},
+            limit => #{ value => SchedulerLimit },
             update_interval => 1000
         }
     ].
@@ -381,13 +366,12 @@ percent(Value) ->
     try
         {NumStr, <<"%">>} = string:take(string:trim(Value), lists:seq($0, $9)),
         binary_to_integer(NumStr)
-    catch
-        error:_ ->
-            erlang:throw({'bad percent value', Value})
+    catch error:_ ->
+        erlang:throw({'bad percent value', Value})
     end.
 
 relative_memory_limit(YamlConfig, Default, Fun) ->
-    conf_with([limits, memory], YamlConfig, Default, fun(MemoryConfig) ->
+    conf_with([limits, memory], YamlConfig, Default, fun (MemoryConfig) ->
         Fun(?C:conf([type], MemoryConfig, <<"total">>), percent(?C:conf([value], MemoryConfig)))
     end).
 
@@ -398,8 +382,8 @@ storage(NS, YamlConfig) ->
         <<"riak">> ->
             PoolSize = ?C:conf([storage, pool, size], YamlConfig, 100),
             {mg_core_storage_riak, #{
-                host => ?C:conf([storage, host], YamlConfig),
-                port => ?C:conf([storage, port], YamlConfig),
+                host   => ?C:conf([storage, host], YamlConfig),
+                port   => ?C:conf([storage, port], YamlConfig),
                 bucket => NS,
                 connect_timeout => ?C:milliseconds(?C:conf([storage, connect_timeout], YamlConfig, <<"5s">>)),
                 request_timeout => ?C:milliseconds(?C:conf([storage, request_timeout], YamlConfig, <<"10s">>)),
@@ -408,14 +392,14 @@ storage(NS, YamlConfig) ->
                     % If `init_count` is greater than zero, then the service will not start
                     % if the riak is unavailable. The `pooler` synchronously creates `init_count`
                     % connections at the start.
-                    init_count => 0,
-                    max_count => PoolSize,
-                    idle_timeout => timer:seconds(60),
-                    cull_interval => timer:seconds(10),
-                    queue_max => ?C:conf([storage, pool, queue_max], YamlConfig, 1000)
+                    init_count          => 0,
+                    max_count           => PoolSize,
+                    idle_timeout        => timer:seconds(60),
+                    cull_interval       => timer:seconds(10),
+                    queue_max           => ?C:conf([storage, pool, queue_max], YamlConfig, 1000)
                 },
                 batching => #{
-                    concurrency_limit => ?C:conf([storage, batch_concurrency_limit], YamlConfig, PoolSize)
+                    concurrency_limit   => ?C:conf([storage, batch_concurrency_limit], YamlConfig, PoolSize)
                 },
                 sidecar => {machinegun_riak_prometheus, #{}}
             }}
@@ -438,79 +422,74 @@ namespace({Name, NSYamlConfig}, YamlConfig) ->
     RetrySpec = fun(Key, DefaultConfig) ->
         ?C:to_retry_policy([namespaces, Name, retries, Key], NSYamlConfig, DefaultConfig)
     end,
-    {Name,
-        maps:merge(
-            #{
-                storage => storage(Name, YamlConfig),
-                processor => #{
-                    url => ?C:conf([processor, url], NSYamlConfig),
-                    transport_opts => #{
-                        pool => ?C:atom(Name),
-                        timeout => ?C:milliseconds(
-                            ?C:conf([processor, http_keep_alive_timeout], NSYamlConfig, <<"4s">>)
-                        ),
-                        max_connections => ?C:conf([processor, pool_size], NSYamlConfig, 50)
-                    },
-                    resolver_opts => #{
-                        ip_picker => random
-                    }
+    {Name, maps:merge(
+        #{
+            storage   => storage(Name, YamlConfig),
+            processor => #{
+                url            => ?C:conf([processor, url], NSYamlConfig),
+                transport_opts => #{
+                    pool => ?C:atom(Name),
+                    timeout => ?C:milliseconds(?C:conf([processor, http_keep_alive_timeout], NSYamlConfig, <<"4s">>)),
+                    max_connections => ?C:conf([processor, pool_size], NSYamlConfig, 50)
                 },
-                worker => genlib_map:compact(#{
-                    registry => procreg(YamlConfig),
-                    worker_options => #{
-                        hibernate_timeout => Timeout(hibernate_timeout, <<"5s">>),
-                        unload_timeout => Timeout(unload_timeout, <<"60s">>),
-                        shutdown_timeout => Timeout(shutdown_timeout, <<"5s">>)
-                    }
-                }),
-                default_processing_timeout => Timeout(default_processing_timeout, <<"30s">>),
-                timer_processing_timeout => Timeout(timer_processing_timeout, <<"60s">>),
-                reschedule_timeout => Timeout(reschedule_timeout, <<"60s">>),
-                retries => #{
-                    storage => RetrySpec(storage, #{
-                        <<"type">> => <<"exponential">>,
-                        <<"max_retries">> => <<"infinity">>,
-                        <<"factor">> => 2,
-                        <<"timeout">> => <<"10ms">>,
-                        <<"max_timeout">> => <<"60s">>
-                    }),
-                    %% max_total_timeout not supported for timers yet, see mg_retry:new_strategy/2 comments
-                    %% actual timers sheduling resolution is one second
-                    timers => RetrySpec(timers, #{
-                        <<"type">> => <<"exponential">>,
-                        <<"max_retries">> => 100,
-                        <<"factor">> => 2,
-                        <<"timeout">> => <<"1s">>,
-                        <<"max_timeout">> => <<"30m">>
-                    }),
-                    processor => RetrySpec(processor, #{
-                        <<"type">> => <<"exponential">>,
-                        <<"max_retries">> => #{
-                            <<"max_total_timeout">> => <<"1d">>
-                        },
-                        <<"factor">> => 2,
-                        <<"timeout">> => <<"10ms">>,
-                        <<"max_timeout">> => <<"60s">>
-                    }),
-                    continuation => RetrySpec(continuation, #{
-                        <<"type">> => <<"exponential">>,
-                        <<"max_retries">> => <<"infinity">>,
-                        <<"factor">> => 2,
-                        <<"timeout">> => <<"10ms">>,
-                        <<"max_timeout">> => <<"60s">>
-                    })
-                },
-                schedulers => namespace_schedulers(NSYamlConfig),
-                event_sinks => [event_sink(ES) || ES <- ?C:conf([event_sinks], NSYamlConfig, [])],
-                suicide_probability => ?C:probability(?C:conf([suicide_probability], NSYamlConfig, 0)),
-                event_stash_size => ?C:conf([event_stash_size], NSYamlConfig, 0)
-            },
-            conf_with([modernizer], NSYamlConfig, #{}, fun(ModernizerYamlConfig) ->
-                #{
-                    modernizer => modernizer(Name, ModernizerYamlConfig)
+                resolver_opts => #{
+                    ip_picker => random
                 }
-            end)
-        )}.
+            },
+            worker => genlib_map:compact(#{
+                registry          => procreg(YamlConfig),
+                worker_options    => #{
+                    hibernate_timeout => Timeout(hibernate_timeout,  <<"5s">>),
+                    unload_timeout    => Timeout(unload_timeout   , <<"60s">>),
+                    shutdown_timeout  => Timeout(shutdown_timeout ,  <<"5s">>)
+                }
+            }),
+            default_processing_timeout => Timeout(default_processing_timeout, <<"30s">>),
+            timer_processing_timeout => Timeout(timer_processing_timeout, <<"60s">>),
+            reschedule_timeout => Timeout(reschedule_timeout, <<"60s">>),
+            retries => #{
+                storage => RetrySpec(storage, #{
+                    <<"type">> => <<"exponential">>,
+                    <<"max_retries">> => <<"infinity">>,
+                    <<"factor">> => 2,
+                    <<"timeout">> => <<"10ms">>,
+                    <<"max_timeout">> => <<"60s">>
+                }),
+                %% max_total_timeout not supported for timers yet, see mg_retry:new_strategy/2 comments
+                %% actual timers sheduling resolution is one second
+                timers => RetrySpec(timers, #{
+                    <<"type">> => <<"exponential">>,
+                    <<"max_retries">> => 100,
+                    <<"factor">> => 2,
+                    <<"timeout">> => <<"1s">>,
+                    <<"max_timeout">> => <<"30m">>
+                }),
+                processor => RetrySpec(processor, #{
+                    <<"type">> => <<"exponential">>,
+                    <<"max_retries">> => #{
+                        <<"max_total_timeout">> => <<"1d">>
+                    },
+                    <<"factor">> => 2,
+                    <<"timeout">> => <<"10ms">>,
+                    <<"max_timeout">> => <<"60s">>
+                }),
+                continuation => RetrySpec(continuation, #{
+                    <<"type">> => <<"exponential">>,
+                    <<"max_retries">> => <<"infinity">>,
+                    <<"factor">> => 2,
+                    <<"timeout">> => <<"10ms">>,
+                    <<"max_timeout">> => <<"60s">>
+                })
+            },
+            schedulers => namespace_schedulers(NSYamlConfig),
+            event_sinks => [event_sink(ES) || ES <- ?C:conf([event_sinks], NSYamlConfig, [])],
+            suicide_probability => ?C:probability(?C:conf([suicide_probability], NSYamlConfig, 0)),
+            event_stash_size => ?C:conf([event_stash_size], NSYamlConfig, 0)
+        },
+        conf_with([modernizer], NSYamlConfig, #{}, fun (ModernizerYamlConfig) -> #{
+            modernizer => modernizer(Name, ModernizerYamlConfig)
+        } end)
+    )}.
 
 namespace_schedulers(NSYamlConfig) ->
     Schedulers = [
@@ -519,7 +498,7 @@ namespace_schedulers(NSYamlConfig) ->
                 #{};
             TimersConfig ->
                 #{
-                    timers => timer_scheduler(2, TimersConfig),
+                    timers         => timer_scheduler(2, TimersConfig),
                     timers_retries => timer_scheduler(1, TimersConfig)
                 }
         end,
@@ -546,7 +525,7 @@ modernizer(Name, ModernizerYamlConfig) ->
     #{
         current_format_version => ?C:conf([current_format_version], ModernizerYamlConfig),
         handler => #{
-            url => ?C:conf([handler, url], ModernizerYamlConfig),
+            url            => ?C:conf([handler, url], ModernizerYamlConfig),
             transport_opts => #{
                 pool => ?C:atom(Name),
                 timeout => ?C:milliseconds(?C:conf([handler, http_keep_alive_timeout], ModernizerYamlConfig, <<"4s">>)),
@@ -561,31 +540,31 @@ modernizer(Name, ModernizerYamlConfig) ->
 scheduler(Share, Config) ->
     #{
         max_scan_limit => ?C:conf([scan_limit], Config, 5000),
-        task_quota => <<"scheduler_tasks_total">>,
-        task_share => Share
+        task_quota     => <<"scheduler_tasks_total">>,
+        task_share     => Share
     }.
 
 timer_scheduler(Share, Config) ->
     (scheduler(Share, Config))#{
-        capacity => ?C:conf([capacity], Config, 1000),
+        capacity       => ?C:conf([capacity], Config, 1000),
         min_scan_delay => timeout(min_scan_delay, Config, <<"1s">>, ms),
-        target_cutoff => timeout(scan_interval, Config, <<"60s">>, sec)
+        target_cutoff  => timeout(scan_interval, Config, <<"60s">>, sec)
     }.
 
 overseer_scheduler(Share, Config) ->
     (scheduler(Share, Config))#{
-        capacity => ?C:conf([capacity], Config, 1000),
+        capacity       => ?C:conf([capacity], Config, 1000),
         min_scan_delay => timeout(min_scan_delay, Config, <<"1s">>, ms),
-        rescan_delay => timeout(scan_interval, Config, <<"10m">>, ms)
+        rescan_delay   => timeout(scan_interval, Config, <<"10m">>, ms)
     }.
 
 notification_scheduler(Share, Config) ->
     (scheduler(Share, Config))#{
-        capacity => ?C:conf([capacity], Config, 1000),
-        min_scan_delay => timeout(min_scan_delay, Config, <<"1s">>, ms),
-        rescan_delay => timeout(scan_interval, Config, <<"1m">>, ms),
-        scan_handicap => timeout(scan_handicap, Config, <<"10s">>, ms),
-        scan_cutoff => timeout(scan_cutoff, Config, <<"4W">>, ms),
+        capacity        => ?C:conf([capacity], Config, 1000),
+        min_scan_delay  => timeout(min_scan_delay, Config, <<"1s">>, ms),
+        rescan_delay    => timeout(scan_interval, Config, <<"1m">>, ms),
+        scan_handicap   => timeout(scan_handicap, Config, <<"10s">>, ms),
+        scan_cutoff     => timeout(scan_cutoff, Config, <<"4W">>, ms),
         reschedule_time => timeout(reschedule_time, Config, <<"5s">>, ms)
     }.
 
@@ -594,10 +573,10 @@ timeout(Name, Config, Default, Unit) ->
 
 event_sink_ns(YamlConfig) ->
     #{
-        registry => procreg(YamlConfig),
-        storage => storage(<<"_event_sinks">>, YamlConfig),
-        worker => #{registry => procreg(YamlConfig)},
-        duplicate_search_batch => 1000,
+        registry                   => procreg(YamlConfig),
+        storage                    => storage(<<"_event_sinks">>, YamlConfig),
+        worker                     => #{registry => procreg(YamlConfig)},
+        duplicate_search_batch     => 1000,
         default_processing_timeout => ?C:milliseconds(<<"30s">>)
     }.
 
@@ -606,14 +585,14 @@ event_sink({Name, ESYamlConfig}) ->
 
 event_sink(machine, Name, ESYamlConfig) ->
     {mg_core_events_sink_machine, #{
-        name => ?C:atom(Name),
+        name       => ?C:atom(Name),
         machine_id => ?C:conf([machine_id], ESYamlConfig)
     }};
 event_sink(kafka, Name, ESYamlConfig) ->
     {mg_core_events_sink_kafka, #{
-        name => ?C:atom(Name),
-        client => ?C:atom(?C:conf([client], ESYamlConfig)),
-        topic => ?C:conf([topic], ESYamlConfig)
+        name       => ?C:atom(Name),
+        client     => ?C:atom(?C:conf([client], ESYamlConfig)),
+        topic      => ?C:conf([topic], ESYamlConfig)
     }}.
 
 procreg(YamlConfig) ->
@@ -657,29 +636,27 @@ service_name(YamlConfig) ->
     ?C:conf([service_name], YamlConfig, <<"machinegun">>).
 
 node_name(YamlConfig) ->
-    Name =
-        case ?C:conf([dist_node_name], YamlConfig, default_node_name(YamlConfig)) of
-            C = [{_, _} | _] ->
-                make_node_name(C, YamlConfig);
-            S when is_binary(S) ->
-                S
-        end,
+    Name = case ?C:conf([dist_node_name], YamlConfig, default_node_name(YamlConfig)) of
+        C = [{_, _} | _] ->
+            make_node_name(C, YamlConfig);
+        S when is_binary(S) ->
+            S
+    end,
     {node_name_type(Name), Name}.
 
 make_node_name(C, YamlConfig) ->
     NamePart = ?C:conf([namepart], C, service_name(YamlConfig)),
-    HostPart =
-        case ?C:conf([hostpart], C) of
-            <<"hostname">> -> ?C:hostname();
-            <<"fqdn">> -> ?C:fqdn();
-            <<"ip">> -> guess_host_addr(YamlConfig)
-        end,
+    HostPart = case ?C:conf([hostpart], C) of
+        <<"hostname">> -> ?C:hostname();
+        <<"fqdn">>     -> ?C:fqdn();
+        <<"ip">>       -> guess_host_addr(YamlConfig)
+    end,
     iolist_to_binary([NamePart, "@", HostPart]).
 
 node_name_type(Name) ->
     case string:split(Name, "@") of
         [_, Hostname] -> host_name_type(Hostname);
-        [_] -> '-sname'
+        [_]           -> '-sname'
     end.
 
 host_name_type(Name) ->
@@ -689,7 +666,7 @@ host_name_type(Name) ->
         {error, einval} ->
             case string:find(Name, ".") of
                 nomatch -> '-sname';
-                _ -> '-name'
+                _       -> '-name'
             end
     end.
 
@@ -700,10 +677,7 @@ guess_host_addr(YamlConfig) ->
     inet:ntoa(?C:guess_host_address(address_family_preference(YamlConfig))).
 
 address_family_preference(YamlConfig) ->
-    conf_with([erlang, ipv6], YamlConfig, inet, fun
-        (true) -> inet6;
-        (false) -> inet
-    end).
+    conf_with([erlang, ipv6], YamlConfig, inet, fun (true) -> inet6; (false) -> inet end).
 
 dist_flags(Config) ->
     case ?C:conf([mode], Config, <<"epmd">>) of
@@ -714,7 +688,7 @@ dist_flags(Config) ->
                 {'-erl_epmd_port', Port}
             ];
         <<"epmd">> ->
-            conf_with([range], Config, [], fun(Range) ->
+            conf_with([range], Config, [], fun (Range) ->
                 {Min, Max} = port_range(Range),
                 [
                     {'-kernel', 'inet_dist_listen_min', Min},
@@ -726,12 +700,8 @@ dist_flags(Config) ->
 port_range(Config) ->
     case lists:sort(Config) of
         [Min, Max] when
-            is_integer(Min),
-            Min > 0,
-            Min < 65536,
-            is_integer(Max),
-            Max > 0,
-            Max < 65536
+            is_integer(Min), Min > 0, Min < 65536,
+            is_integer(Max), Max > 0, Max < 65536
         ->
             {Min, Max};
         _ ->
@@ -742,12 +712,12 @@ port_range(Config) ->
 %% erl_inetrc
 %%
 erl_inetrc(YamlConfig) ->
-    conf_if([erlang, ipv6], YamlConfig, [{inet6, true}, {tcp, inet6_tcp}]) ++
-        conf_if([erlang, disable_dns_cache], YamlConfig, [{cache_size, 0}]).
+    conf_if([erlang, ipv6             ], YamlConfig, [{inet6, true}, {tcp, inet6_tcp}]) ++
+    conf_if([erlang, disable_dns_cache], YamlConfig, [{cache_size, 0}                ]).
 
 conf_if(YamlConfigPath, YamlConfig, Value) ->
     case ?C:conf(YamlConfigPath, YamlConfig, false) of
-        true -> Value;
+        true  -> Value;
         false -> []
     end.
 
@@ -775,4 +745,4 @@ log_level_tuple_to_atom({<<"info">>, NewLevel}) when is_binary(NewLevel) ->
 log_level_tuple_to_atom({<<"debug">>, NewLevel}) when is_binary(NewLevel) ->
     {debug, binary_to_atom(NewLevel)};
 log_level_tuple_to_atom({Level, _NewLevel}) ->
-    erlang:throw({bad_log_level, Level}).
+    throw("Not supported logger level '" ++ binary_to_list(Level) ++ "'").
