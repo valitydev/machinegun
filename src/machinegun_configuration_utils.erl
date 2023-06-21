@@ -525,7 +525,8 @@ maybe_timecap(#{<<"timecap">> := TimecapTimeout}, PolicySpec) ->
 maybe_timecap(_Config, PolicySpec) ->
     PolicySpec.
 
--spec max_retries_spec(map()) -> {max_total_timeout, pos_integer()} | infinitity | pos_integer().
+-spec max_retries_spec(map() | binary() | pos_integer()) ->
+    {max_total_timeout, pos_integer()} | infinity | pos_integer().
 max_retries_spec(#{<<"max_total_timeout">> := MaxTotalTimeout}) ->
     {max_total_timeout, time_interval(MaxTotalTimeout, 'ms')};
 max_retries_spec(<<"infinity">>) ->

@@ -420,7 +420,7 @@ namespace({Name, NSYamlConfig}, YamlConfig) ->
         timeout(TimeoutName, NSYamlConfig, Default, ms)
     end,
     RetrySpec = fun(Key, DefaultConfig) ->
-        ?C:to_retry_policy([namespaces, Name, retries, Key], NSYamlConfig, DefaultConfig)
+        ?C:to_retry_policy([namespaces, binary_to_atom(Name), retries, Key], NSYamlConfig, DefaultConfig)
     end,
     {Name, maps:merge(
         #{

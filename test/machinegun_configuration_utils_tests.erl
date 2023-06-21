@@ -157,7 +157,7 @@ traverse_test_() ->
         machinegun_configuration_utils:conf([blarg], Config)
     ).
 
--spec retry_policy_test_() -> testgen().
+-spec retry_policy_test_() -> [testgen()].
 retry_policy_test_() ->
     DataSets = [
         {
@@ -249,7 +249,7 @@ retry_policy_test_() ->
         ?_assertEqual(
             Policy,
             machinegun_configuration_utils:to_retry_policy(
-                [namespaces, <<"ns">>, retries, storage],
+                [namespaces, 'test-namespace', retries, storage],
                 machinegun_configuration_utils:parse_yaml(Yaml),
                 DefaultMap
             )
@@ -257,7 +257,7 @@ retry_policy_test_() ->
      || {Yaml, DefaultMap, Policy} <- DataSets
     ].
 
--spec retry_policy_failure_test_() -> testgen().
+-spec retry_policy_failure_test_() -> [testgen()].
 retry_policy_failure_test_() ->
     DataSets = [
         #{},
@@ -295,10 +295,11 @@ retry_policy_failure_test_() ->
             <<"max_retries">> => 10
         }
     ],
+    Path = [namespaces, 'test-namespace', retries, storage],
     [
         ?_assertThrow(
-            {'bad retry config', [namespaces, <<"ns">>, retries, storage], Map},
-            machinegun_configuration_utils:to_retry_policy([namespaces, <<"ns">>, retries, storage], [], Map)
+            {'bad retry config', Path, Map},
+            machinegun_configuration_utils:to_retry_policy(Path, [], Map)
         )
      || Map <- DataSets
     ].
