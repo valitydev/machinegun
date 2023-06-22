@@ -415,13 +415,12 @@ namespaces(YamlConfig) ->
         ?C:conf([namespaces], YamlConfig)
     ).
 
+-define(NS_TIMEOUT(TimeoutName, Default),
+    timeout(TimeoutName, NSYamlConfig, Default, ms)).
+-define(NS_RETRY_SPEC(Key, DefaultConfig),
+    ?C:to_retry_policy([namespaces, binary_to_atom(Name), retries, Key], NSYamlConfig, DefaultConfig)).
+
 namespace({Name, NSYamlConfig}, YamlConfig) ->
-    Timeout = fun(TimeoutName, Default) ->
-        timeout(TimeoutName, NSYamlConfig, Default, ms)
-    end,
-    RetrySpec = fun(Key, DefaultConfig) ->
-        ?C:to_retry_policy([namespaces, binary_to_atom(Name), retries, Key], NSYamlConfig, DefaultConfig)
-    end,
     {Name, maps:merge(
         #{
             storage   => storage(Name, YamlConfig),
@@ -439,46 +438,46 @@ namespace({Name, NSYamlConfig}, YamlConfig) ->
             worker => genlib_map:compact(#{
                 registry          => procreg(YamlConfig),
                 worker_options    => #{
-                    hibernate_timeout => Timeout(hibernate_timeout,  <<"5s">>),
-                    unload_timeout    => Timeout(unload_timeout   , <<"60s">>),
-                    shutdown_timeout  => Timeout(shutdown_timeout ,  <<"5s">>)
+                    hibernate_timeout => ?NS_TIMEOUT(hibernate_timeout,  <<"5s">>),
+                    unload_timeout    => ?NS_TIMEOUT(unload_timeout   , <<"60s">>),
+                    shutdown_timeout  => ?NS_TIMEOUT(shutdown_timeout ,  <<"5s">>)
                 }
             }),
-            default_processing_timeout => Timeout(default_processing_timeout, <<"30s">>),
-            timer_processing_timeout => Timeout(timer_processing_timeout, <<"60s">>),
-            reschedule_timeout => Timeout(reschedule_timeout, <<"60s">>),
+            default_processing_timeout => ?NS_TIMEOUT(default_processing_timeout, <<"30s">>),
+            timer_processing_timeout => ?NS_TIMEOUT(timer_processing_timeout, <<"60s">>),
+            reschedule_timeout => ?NS_TIMEOUT(reschedule_timeout, <<"60s">>),
             retries => #{
-                storage => RetrySpec(storage, #{
-                    <<"type">> => <<"exponential">>,
-                    <<"max_retries">> => <<"infinity">>,
-                    <<"factor">> => 2,
-                    <<"timeout">> => <<"10ms">>,
-                    <<"max_timeout">> => <<"60s">>
+                storage => ?NS_RETRY_SPEC(storage, #{
+                    type => <<"exponential">>,
+                    max_retries => <<"infinity">>,
+                    factor => 2,
+                    timeout => <<"10ms">>,
+                    max_timeout => <<"60s">>
                 }),
                 %% max_total_timeout not supported for timers yet, see mg_retry:new_strategy/2 comments
                 %% actual timers sheduling resolution is one second
-                timers => RetrySpec(timers, #{
-                    <<"type">> => <<"exponential">>,
-                    <<"max_retries">> => 100,
-                    <<"factor">> => 2,
-                    <<"timeout">> => <<"1s">>,
-                    <<"max_timeout">> => <<"30m">>
+                timers => ?NS_RETRY_SPEC(timers, #{
+                    type => <<"exponential">>,
+                    max_retries => 100,
+                    factor => 2,
+                    timeout => <<"1s">>,
+                    max_timeout => <<"30m">>
                 }),
-                processor => RetrySpec(processor, #{
-                    <<"type">> => <<"exponential">>,
-                    <<"max_retries">> => #{
-                        <<"max_total_timeout">> => <<"1d">>
+                processor => ?NS_RETRY_SPEC(processor, #{
+                    type => <<"exponential">>,
+                    max_retries => #{
+                        max_total_timeout => <<"1d">>
                     },
-                    <<"factor">> => 2,
-                    <<"timeout">> => <<"10ms">>,
-                    <<"max_timeout">> => <<"60s">>
+                    factor => 2,
+                    timeout => <<"10ms">>,
+                    max_timeout => <<"60s">>
                 }),
-                continuation => RetrySpec(continuation, #{
-                    <<"type">> => <<"exponential">>,
-                    <<"max_retries">> => <<"infinity">>,
-                    <<"factor">> => 2,
-                    <<"timeout">> => <<"10ms">>,
-                    <<"max_timeout">> => <<"60s">>
+                continuation => ?NS_RETRY_SPEC(continuation, #{
+                    type => <<"exponential">>,
+                    max_retries => <<"infinity">>,
+                    factor => 2,
+                    timeout => <<"10ms">>,
+                    max_timeout => <<"60s">>
                 })
             },
             schedulers => namespace_schedulers(NSYamlConfig),

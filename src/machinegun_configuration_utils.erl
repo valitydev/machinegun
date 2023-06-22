@@ -79,7 +79,7 @@
 -type time_interval_unit() :: 'week' | 'day' | 'hour' | 'min' | 'sec' | 'ms' | 'mu'.
 -type time_interval() :: {non_neg_integer(), time_interval_unit()}.
 
--type retry_config() :: map().
+-type retry_config() :: #{atom() := yaml_string()}.
 
 -spec parse_yaml_config(filename()) -> yaml_config().
 parse_yaml_config(Filename) ->
@@ -461,73 +461,92 @@ replace(Replacements, StrIn) ->
         Replacements
     ).
 
--spec to_retry_policy(yaml_config_path(), yaml_config(), map()) -> mg_core_retry:policy().
+-spec to_retry_policy(yaml_config_path(), yaml_config(), map()) -> genlib_retry:policy().
 to_retry_policy([namespaces, _NS | Path] = YamlPath, NSYamlConfig, Default) ->
     YamlConfig = conf(Path, NSYamlConfig, []),
-    Config = maybe_max_retries_to_map(proplists:to_map(YamlConfig)),
+    Config = maybe_max_retries_to_map(to_proper_map(YamlConfig)),
     build_policy(YamlPath, maps:merge(Default, Config)).
 
 -spec maybe_max_retries_to_map(retry_config()) -> retry_config().
-maybe_max_retries_to_map(#{<<"max_retries">> := Value} = Config) when is_list(Value) ->
-    Config#{<<"max_retries">> => proplists:to_map(Value)};
+maybe_max_retries_to_map(#{max_retries := Value} = Config) when is_list(Value) ->
+    Config#{max_retries => to_proper_map(Value)};
 maybe_max_retries_to_map(Config) ->
     Config.
 
--spec build_policy(yaml_config_path(), retry_config()) -> mg_core_retry:policy().
+-spec to_proper_map(list({binary(), T})) -> #{atom() => T}.
+to_proper_map(L) when is_list(L) ->
+    lists:foldl(
+        fun({K, V}, M) when is_binary(K) ->
+            M#{binary_to_atom(K) => V}
+        end,
+        #{},
+        L
+    ).
+
+-spec build_policy(yaml_config_path(), retry_config()) -> genlib_retry:policy().
 build_policy(
     _Path,
     Config = #{
-        <<"type">> := <<"linear">>,
-        <<"max_retries">> := MaxRetries,
-        <<"timeout">> := Timeout
+        type := <<"linear">>,
+        max_retries := MaxRetries,
+        timeout := Timeout
     }
 ) ->
-    maybe_timecap(Config, {linear, max_retries_spec(MaxRetries), time_interval(Timeout, 'ms')});
+    maybe_timecap(Config, {linear, max_retries_spec(MaxRetries), maybe_w_jitter(Config, time_interval(Timeout, 'ms'))});
 build_policy(
     _Path,
     Config = #{
-        <<"type">> := <<"exponential">>,
-        <<"max_retries">> := MaxRetries,
-        <<"factor">> := Factor,
-        <<"timeout">> := Timeout,
-        <<"max_timeout">> := MaxTimeout
+        type := <<"exponential">>,
+        max_retries := MaxRetries,
+        factor := Factor,
+        timeout := Timeout,
+        max_timeout := MaxTimeout
     }
 ) ->
     maybe_timecap(
         Config,
-        {exponential, max_retries_spec(MaxRetries), Factor, time_interval(Timeout, 'ms'),
+        {exponential, max_retries_spec(MaxRetries), Factor, maybe_w_jitter(Config, time_interval(Timeout, 'ms')),
             time_interval(MaxTimeout, 'ms')}
     );
 build_policy(
     _Path,
     Config = #{
-        <<"type">> := <<"exponential">>,
-        <<"max_retries">> := MaxRetries,
-        <<"factor">> := Factor,
-        <<"timeout">> := Timeout
+        type := <<"exponential">>,
+        max_retries := MaxRetries,
+        factor := Factor,
+        timeout := Timeout
     }
 ) ->
-    maybe_timecap(Config, {exponential, max_retries_spec(MaxRetries), Factor, time_interval(Timeout, 'ms')});
+    maybe_timecap(
+        Config,
+        {exponential, max_retries_spec(MaxRetries), Factor, maybe_w_jitter(Config, time_interval(Timeout, 'ms'))}
+    );
 build_policy(
     _Path,
     Config = #{
-        <<"type">> := <<"intervals">>,
-        <<"timeouts">> := Timeouts
+        type := <<"intervals">>,
+        timeouts := Timeouts
     }
 ) when is_list(Timeouts) ->
-    maybe_timecap(Config, {intervals, [time_interval(Timeout, 'ms') || Timeout <- Timeouts]});
+    maybe_timecap(Config, {intervals, [maybe_w_jitter(Config, time_interval(Timeout, 'ms')) || Timeout <- Timeouts]});
 build_policy(Path, Config) ->
     erlang:throw({'bad retry config', Path, Config}).
 
--spec maybe_timecap(retry_config(), mg_core_retry:policy()) -> mg_core_retry:policy().
-maybe_timecap(#{<<"timecap">> := TimecapTimeout}, PolicySpec) ->
+-spec maybe_w_jitter(retry_config(), T) -> T | {jitter, T, pos_integer()}.
+maybe_w_jitter(#{jitter := JitterEpsilon}, Timeout) when JitterEpsilon >= 0 ->
+    {jitter, Timeout, time_interval(JitterEpsilon, 'ms')};
+maybe_w_jitter(_Config, Timeout) ->
+    Timeout.
+
+-spec maybe_timecap(retry_config(), genlib_retry:policy()) -> genlib_retry:policy().
+maybe_timecap(#{timecap := TimecapTimeout}, PolicySpec) ->
     {timecap, time_interval(TimecapTimeout, 'ms'), PolicySpec};
 maybe_timecap(_Config, PolicySpec) ->
     PolicySpec.
 
 -spec max_retries_spec(map() | binary() | pos_integer()) ->
     {max_total_timeout, pos_integer()} | infinity | pos_integer().
-max_retries_spec(#{<<"max_total_timeout">> := MaxTotalTimeout}) ->
+max_retries_spec(#{max_total_timeout := MaxTotalTimeout}) ->
     {max_total_timeout, time_interval(MaxTotalTimeout, 'ms')};
 max_retries_spec(<<"infinity">>) ->
     infinity;
