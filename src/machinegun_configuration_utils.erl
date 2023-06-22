@@ -533,7 +533,7 @@ build_policy(Path, Config) ->
     erlang:throw({'bad retry config', Path, Config}).
 
 -spec maybe_w_jitter(retry_config(), T) -> T | {jitter, T, pos_integer()}.
-maybe_w_jitter(#{jitter := JitterEpsilon}, Timeout) when JitterEpsilon >= 0 ->
+maybe_w_jitter(#{jitter := JitterEpsilon}, Timeout) ->
     {jitter, Timeout, time_interval(JitterEpsilon, 'ms')};
 maybe_w_jitter(_Config, Timeout) ->
     Timeout.
