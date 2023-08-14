@@ -27,7 +27,12 @@
         prometheus,
         prometheus_cowboy,
         machinegun_core,
-        machinegun_woody_api
+        machinegun_woody_api,
+        % OTEL deps
+        opentelemetry_api,
+        % Exporter must start _before_ main OTel app
+        opentelemetry_exporter,
+        opentelemetry
     ]},
     {env, []},
     {modules, []},
