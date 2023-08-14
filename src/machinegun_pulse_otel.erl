@@ -10,17 +10,9 @@
 
 -export([handle_beat/2]).
 
-%% pulse types
--type beat() ::
-    mg_core_pulse:beat()
-    | mg_core_consuela_pulse_adapter:beat()
-    | mg_core_queue_scanner:beat()
-    | #woody_event{}
-    | #woody_request_handle_error{}.
+%% TODO Specify available options if any
+-type options() :: map().
 
--type options() :: #{}.
-
--export_type([beat/0]).
 -export_type([options/0]).
 
 -type woody_event() :: #woody_event{}.
@@ -29,7 +21,7 @@
 %% mg_pulse handler
 %%
 
--spec handle_beat(options(), beat()) -> ok.
+-spec handle_beat(options(), machinegun_pulse:beat()) -> ok.
 %%
 %% Consuela (registry, discovery etc) beats
 %% ============================================================================
@@ -285,9 +277,7 @@ woody_span_opts(#woody_event{event = ?EV_CALL_SERVICE}) ->
 woody_span_opts(#woody_event{event = ?EV_INVOKE_SERVICE_HANDLER}) ->
     #{
         kind => ?SPAN_KIND_SERVER
-    };
-woody_span_opts(_Beat) ->
-    #{}.
+    }.
 
 -spec woody_span_key(woody_event()) -> woody:req_id() | undefined.
 woody_span_key(#woody_event{rpc_id = #{span_id := WoodySpanReqId}}) ->
