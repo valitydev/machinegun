@@ -15,8 +15,6 @@
 
 -export_type([options/0]).
 
--type woody_event() :: #woody_event{}.
-
 %%
 %% mg_pulse handler
 %%
@@ -58,14 +56,30 @@ handle_beat(_Options, _Beat = {squad, {_Squad, {{monitor, _Ref}, _MonitorAction}
 %% Woody API beats
 %% ============================================================================
 %%
-handle_beat(_Options, Beat = #woody_event{event = ?EV_CALL_SERVICE}) ->
-    woody_span_start(Beat);
-handle_beat(_Options, Beat = #woody_event{event = ?EV_SERVICE_RESULT}) ->
-    woody_span_end(Beat);
-handle_beat(_Options, Beat = #woody_event{event = ?EV_INVOKE_SERVICE_HANDLER}) ->
-    woody_span_start(Beat);
-handle_beat(_Options, Beat = #woody_event{event = ?EV_SERVICE_HANDLER_RESULT}) ->
-    woody_span_end(Beat);
+handle_beat(
+    _Options,
+    #woody_event{
+        event = ?EV_CALL_SERVICE,
+        rpc_id = #{span_id := WoodySpanId},
+        event_meta = #{service := Service, function := Function}
+    }
+) ->
+    SpanName = <<"woody_call ", (atom_to_binary(Service))/binary, ":", (atom_to_binary(Function))/binary>>,
+    proc_span_start(WoodySpanId, SpanName, #{attributes => #{kind => ?SPAN_KIND_CLIENT}});
+handle_beat(_Options, #woody_event{event = ?EV_SERVICE_RESULT, rpc_id = #{span_id := WoodySpanId}}) ->
+    proc_span_end(WoodySpanId);
+handle_beat(
+    _Options,
+    #woody_event{
+        event = ?EV_INVOKE_SERVICE_HANDLER,
+        rpc_id = #{span_id := WoodySpanId},
+        event_meta = #{service := Service, function := Function}
+    }
+) ->
+    SpanName = <<"woody_invoke ", (atom_to_binary(Service))/binary, ":", (atom_to_binary(Function))/binary>>,
+    proc_span_start(WoodySpanId, SpanName, #{attributes => #{kind => ?SPAN_KIND_SERVER}});
+handle_beat(_Options, #woody_event{event = ?EV_SERVICE_HANDLER_RESULT, rpc_id = #{span_id := WoodySpanId}}) ->
+    proc_span_end(WoodySpanId);
 handle_beat(_Options, _Beat = #woody_event{}) ->
     ok;
 %% Woody server's function handling error beat.
@@ -78,8 +92,10 @@ handle_beat(_Options, _Beat = #woody_request_handle_error{}) ->
 %%
 %% Timer
 %% Event machine action 'set_timer' performed.
-handle_beat(_Options, _Beat = #mg_core_timer_lifecycle_created{}) ->
-    ok;
+handle_beat(_Options, Beat = #mg_core_timer_lifecycle_created{machine_id = ID, namespace = NS}) ->
+    maybe_add_span_event(otel_tracer:current_span_ctx(), atom_to_binary(element(1, Beat)), #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
 %% In case of transient error during processing 'timeout' machine will try to
 %% reschedule its next action according to configured 'timers' retry strategy.
 %% Then it transitions to new state with status 'retrying' and emits this beat.
@@ -91,8 +107,10 @@ handle_beat(_Options, _Beat = #mg_core_timer_lifecycle_rescheduled{}) ->
 handle_beat(_Options, _Beat = #mg_core_timer_lifecycle_rescheduling_error{}) ->
     ok;
 %% Event machine timer removed: action 'unset_timer' performed.
-handle_beat(_Options, _Beat = #mg_core_timer_lifecycle_removed{}) ->
-    ok;
+handle_beat(_Options, Beat = #mg_core_timer_lifecycle_removed{machine_id = ID, namespace = NS}) ->
+    maybe_add_span_event(otel_tracer:current_span_ctx(), atom_to_binary(element(1, Beat)), #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
 %% Scheduler handling
 %% ???
 handle_beat(_Options, _Beat = #mg_core_scheduler_task_add_error{}) ->
@@ -120,90 +138,135 @@ handle_beat(_Options, _Beat = #mg_core_scheduler_quota_reserved{}) ->
     ok;
 %% Timer handling
 %% Wraps `Module:process_machine/7` when processor impact is 'timeout'.
-handle_beat(_Options, _Beat = #mg_core_timer_process_started{}) ->
-    ok;
-handle_beat(_Options, _Beat = #mg_core_timer_process_finished{}) ->
-    ok;
+handle_beat(_Options, #mg_core_timer_process_started{machine_id = ID, namespace = NS, queue = Queue}) ->
+    proc_span_start({<<"mg_core_timer_process">>, Queue}, <<"mg_core_timer_process">>, #{
+        kind => ?SPAN_KIND_INTERNAL,
+        attributes => #{<<"machine.ns">> => NS, <<"machine.id">> => ID, <<"queue">> => atom_to_binary(Queue)}
+    });
+handle_beat(_Options, _Beat = #mg_core_timer_process_finished{queue = Queue}) ->
+    proc_span_end({<<"mg_core_timer_process">>, Queue});
 %% Machine process state
 %% Machine created and loaded
 %% Mind that loading of machine state happens in its worker' process context
 %% and not during call to supervisor.
-handle_beat(_Options, _Beat = #mg_core_machine_lifecycle_created{}) ->
-    ok;
+handle_beat(_Options, Beat = #mg_core_machine_lifecycle_created{machine_id = ID, namespace = NS}) ->
+    maybe_add_span_event(otel_tracer:current_span_ctx(), atom_to_binary(element(1, Beat)), #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
 %% Removal of machine (from storage); signalled by 'remove' action in a new
 %% processed state.
-handle_beat(_Options, _Beat = #mg_core_machine_lifecycle_removed{}) ->
-    ok;
+handle_beat(_Options, Beat = #mg_core_machine_lifecycle_removed{machine_id = ID, namespace = NS}) ->
+    maybe_add_span_event(otel_tracer:current_span_ctx(), atom_to_binary(element(1, Beat)), #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
 %% Existing machine loaded.
-handle_beat(_Options, _Beat = #mg_core_machine_lifecycle_loaded{}) ->
-    ok;
+handle_beat(_Options, Beat = #mg_core_machine_lifecycle_loaded{machine_id = ID, namespace = NS}) ->
+    maybe_add_span_event(otel_tracer:current_span_ctx(), atom_to_binary(element(1, Beat)), #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
 %% When machine's worker process handles scheduled timeout timer and stops
 %% normally.
-handle_beat(_Options, _Beat = #mg_core_machine_lifecycle_unloaded{}) ->
-    ok;
+handle_beat(_Options, Beat = #mg_core_machine_lifecycle_unloaded{machine_id = ID, namespace = NS}) ->
+    maybe_add_span_event(otel_tracer:current_span_ctx(), atom_to_binary(element(1, Beat)), #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
 %% Machine can be configured with probability of suicide via
 %% "erlang:exit(self(), kill)". Each time machine successfully completes
 %% `Module:process_machine/7` call and before persisting transition artifacts
 %% (including its very own new state snapshot), it attempts a suicide.
-handle_beat(_Options, _Beat = #mg_core_machine_lifecycle_committed_suicide{}) ->
-    ok;
+handle_beat(_Options, Beat = #mg_core_machine_lifecycle_committed_suicide{machine_id = ID, namespace = NS}) ->
+    maybe_add_span_event(otel_tracer:current_span_ctx(), atom_to_binary(element(1, Beat)), #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
 %% When existing machine with nonerroneous state fails to handle processor
 %% response it transitions to special 'failed' state.
 %% See `mg_core_machine:machine_status/0`:
 %% "{error, Reason :: term(), machine_regular_status()}".
 %% NOTE Nonexisting machine can also fail on init.
-handle_beat(_Options, _Beat = #mg_core_machine_lifecycle_failed{}) ->
-    ok;
+handle_beat(_Options, #mg_core_machine_lifecycle_failed{
+    exception = Exception, machine_id = ID, namespace = NS
+}) ->
+    maybe_record_exception(otel_tracer:current_span_ctx(), Exception, #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
 %% This event occrurs once existing machine successfully transitions from
 %% special 'failed' state, but before it's new state persistence in storage.
-handle_beat(_Options, _Beat = #mg_core_machine_lifecycle_repaired{}) ->
-    ok;
+handle_beat(_Options, Beat = #mg_core_machine_lifecycle_repaired{machine_id = ID, namespace = NS}) ->
+    maybe_add_span_event(otel_tracer:current_span_ctx(), atom_to_binary(element(1, Beat)), #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
 %% When failed to load machine.
-handle_beat(_Options, _Beat = #mg_core_machine_lifecycle_loading_error{}) ->
-    ok;
-%% Transient error when removing or perisisting machine state transition.
-handle_beat(_Options, _Beat = #mg_core_machine_lifecycle_transient_error{}) ->
-    ok;
+handle_beat(_Options, #mg_core_machine_lifecycle_loading_error{
+    exception = Exception, machine_id = ID, namespace = NS
+}) ->
+    maybe_record_exception(otel_tracer:current_span_ctx(), Exception, #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
+%% Transient error when removing or persisting machine state transition.
+handle_beat(_Options, #mg_core_machine_lifecycle_transient_error{
+    exception = Exception, machine_id = ID, namespace = NS
+}) ->
+    maybe_record_exception(otel_tracer:current_span_ctx(), Exception, #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
 %% Machine call handling
 %% Wraps core machine call `Module:process_machine/7`.
-handle_beat(_Options, _Beat = #mg_core_machine_process_started{}) ->
-    ok;
-handle_beat(_Options, _Beat = #mg_core_machine_process_finished{}) ->
-    ok;
+handle_beat(
+    _Options,
+    #mg_core_machine_process_started{processor_impact = ProcessorImpact, machine_id = ID, namespace = NS}
+) ->
+    proc_span_start(ProcessorImpact, <<"mg_core_machine_process">>, #{
+        kind => ?SPAN_KIND_INTERNAL,
+        attributes => #{<<"machine.ns">> => NS, <<"machine.id">> => ID}
+    });
+handle_beat(_Options, #mg_core_machine_process_finished{processor_impact = ProcessorImpact}) ->
+    proc_span_end(ProcessorImpact);
 %% Transient error _throw_n from during state processing.
-handle_beat(_Options, _Beat = #mg_core_machine_process_transient_error{}) ->
-    ok;
+handle_beat(_Options, #mg_core_machine_process_transient_error{
+    exception = Exception, machine_id = ID, namespace = NS
+}) ->
+    maybe_record_exception(otel_tracer:current_span_ctx(), Exception, #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
 %% Machine notification
-handle_beat(_Options, _Beat = #mg_core_machine_notification_created{}) ->
-    ok;
-handle_beat(_Options, _Beat = #mg_core_machine_notification_delivered{}) ->
-    ok;
-handle_beat(_Options, _Beat = #mg_core_machine_notification_delivery_error{}) ->
-    ok;
+handle_beat(_Options, Beat = #mg_core_machine_notification_created{machine_id = ID, namespace = NS}) ->
+    maybe_add_span_event(otel_tracer:current_span_ctx(), atom_to_binary(element(1, Beat)), #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
+handle_beat(_Options, Beat = #mg_core_machine_notification_delivered{machine_id = ID, namespace = NS}) ->
+    maybe_add_span_event(otel_tracer:current_span_ctx(), atom_to_binary(element(1, Beat)), #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
+handle_beat(_Options, #mg_core_machine_notification_delivery_error{
+    exception = Exception, machine_id = ID, namespace = NS
+}) ->
+    maybe_record_exception(otel_tracer:current_span_ctx(), Exception, #{
+        <<"machine.ns">> => NS, <<"machine.id">> => ID
+    });
 %% Machine worker handling
 %% Happens upon worker's gen_server call.
-handle_beat(_Options, _Beat = #mg_core_worker_call_attempt{}) ->
-    ok;
+handle_beat(_Options, Beat = #mg_core_worker_call_attempt{}) ->
+    maybe_add_span_event(otel_tracer:current_span_ctx(), atom_to_binary(element(1, Beat)), #{});
 %% Upon worker's gen_server start.
-handle_beat(_Options, _Beat = #mg_core_worker_start_attempt{}) ->
-    ok;
+handle_beat(_Options, Beat = #mg_core_worker_start_attempt{}) ->
+    maybe_add_span_event(otel_tracer:current_span_ctx(), atom_to_binary(element(1, Beat)), #{});
 %% Storage calls
-handle_beat(_Options, _Beat = #mg_core_storage_get_start{}) ->
-    ok;
-handle_beat(_Options, _Beat = #mg_core_storage_get_finish{}) ->
-    ok;
-handle_beat(_Options, _Beat = #mg_core_storage_put_start{}) ->
-    ok;
-handle_beat(_Options, _Beat = #mg_core_storage_put_finish{}) ->
-    ok;
-handle_beat(_Options, _Beat = #mg_core_storage_search_start{}) ->
-    ok;
-handle_beat(_Options, _Beat = #mg_core_storage_search_finish{}) ->
-    ok;
-handle_beat(_Options, _Beat = #mg_core_storage_delete_start{}) ->
-    ok;
-handle_beat(_Options, _Beat = #mg_core_storage_delete_finish{}) ->
-    ok;
+handle_beat(_Options, #mg_core_storage_get_start{name = Name}) ->
+    proc_span_start({<<"mg_core_storage_get">>, Name}, <<"mg_core_storage_get">>, #{kind => ?SPAN_KIND_INTERNAL});
+handle_beat(_Options, #mg_core_storage_get_finish{name = Name}) ->
+    proc_span_end({<<"mg_core_storage_get">>, Name});
+handle_beat(_Options, #mg_core_storage_put_start{name = Name}) ->
+    proc_span_start({<<"mg_core_storage_put">>, Name}, <<"mg_core_storage_put">>, #{kind => ?SPAN_KIND_INTERNAL});
+handle_beat(_Options, #mg_core_storage_put_finish{name = Name}) ->
+    proc_span_end({<<"mg_core_storage_put">>, Name});
+handle_beat(_Options, #mg_core_storage_search_start{name = Name}) ->
+    proc_span_start({<<"mg_core_storage_search">>, Name}, <<"mg_core_storage_search">>, #{kind => ?SPAN_KIND_INTERNAL});
+handle_beat(_Options, #mg_core_storage_search_finish{name = Name}) ->
+    proc_span_end({<<"mg_core_storage_search">>, Name});
+handle_beat(_Options, #mg_core_storage_delete_start{name = Name}) ->
+    proc_span_start({<<"mg_core_storage_delete">>, Name}, <<"mg_core_storage_delete">>, #{kind => ?SPAN_KIND_INTERNAL});
+handle_beat(_Options, #mg_core_storage_delete_finish{name = Name}) ->
+    proc_span_end({<<"mg_core_storage_delete">>, Name});
 %% Event sink operations
 %% Kafka specific producer event.
 handle_beat(_Options, _Beat = #mg_core_events_sink_kafka_sent{}) ->
@@ -240,66 +303,34 @@ handle_beat(_Options, _Beat) ->
 
 %% Internal
 
--spec woody_span_start(woody_event()) -> ok.
-woody_span_start(Beat) ->
-    _ = proc_span_start(woody_span_key(Beat), woody_span_name(Beat), woody_span_opts(Beat)),
+-spec proc_span_start(term(), opentelemetry:span_name(), otel_span:start_opts()) ->
     ok.
-
--spec woody_span_end(woody_event()) -> ok.
-woody_span_end(Beat) ->
-    _ = proc_span_end(woody_span_key(Beat)),
-    ok.
-
--spec woody_span_name(woody_event()) -> opentelemetry:span_name().
-% Rely on service/function metadata
-woody_span_name(#woody_event{
-    event = ?EV_CALL_SERVICE,
-    event_meta = #{service := Service, function := Function}
-}) ->
-    <<"woody call ", (atom_to_binary(Service))/binary, ":", (atom_to_binary(Function))/binary>>;
-woody_span_name(#woody_event{
-    event = ?EV_INVOKE_SERVICE_HANDLER,
-    event_meta = #{service := Service, function := Function}
-}) ->
-    <<"woody invoke ", (atom_to_binary(Service))/binary, ":", (atom_to_binary(Function))/binary>>;
-woody_span_name(#woody_event{event = EventType}) ->
-    <<"unknown woody span '", (atom_to_binary(EventType))/binary, "'">>.
-
--spec woody_span_opts(woody_event()) -> otel_span:start_opts().
-%% NOTE Mind attributes spec in otel_span:start_opts/0
-%%          #{...,
-%%            attributes => #{binary() => binary()}}
-%%      Else tracer will silently ignore invalid keys/values
-woody_span_opts(#woody_event{event = ?EV_CALL_SERVICE}) ->
-    #{
-        kind => ?SPAN_KIND_CLIENT
-    };
-woody_span_opts(#woody_event{event = ?EV_INVOKE_SERVICE_HANDLER}) ->
-    #{
-        kind => ?SPAN_KIND_SERVER
-    }.
-
--spec woody_span_key(woody_event()) -> woody:req_id() | undefined.
-woody_span_key(#woody_event{rpc_id = #{span_id := WoodySpanReqId}}) ->
-    WoodySpanReqId;
-woody_span_key(_Beat) ->
-    undefined.
-
--spec proc_span_start(woody:req_id() | undefined, opentelemetry:span_name(), otel_span:start_opts()) ->
-    opentelemetry:span_ctx() | undefined.
-proc_span_start(undefined, _SpanName, _Opts) ->
-    undefined;
 proc_span_start(SpanKey, SpanName, Opts) ->
     Tracer = opentelemetry:get_application_tracer(?MODULE),
     SpanCtx = otel_tracer:set_current_span(otel_tracer:start_span(Tracer, SpanName, Opts)),
     _ = erlang:put({proc_span_ctx, SpanKey}, SpanCtx),
-    SpanCtx.
+    ok.
 
--spec proc_span_end(woody:req_id() | undefined) -> opentelemetry:span_ctx() | undefined.
-proc_span_end(undefined) ->
-    undefined;
+-spec proc_span_end(term()) -> ok.
 proc_span_end(SpanKey) ->
     case erlang:erase({proc_span_ctx, SpanKey}) of
-        undefined -> undefined;
-        SpanCtx -> otel_tracer:set_current_span(otel_span:end_span(SpanCtx, undefined))
+        undefined ->
+            ok;
+        #span_ctx{} = SpanCtx ->
+            _ = otel_tracer:set_current_span(otel_span:end_span(SpanCtx, undefined)),
+            ok
     end.
+
+-spec maybe_add_span_event(opentelemetry:span_ctx(), opentelemetry:event_name(), opentelemetry:attributes_map()) -> ok.
+maybe_add_span_event(undefined, _EventName, _EventAttributes) ->
+    ok;
+maybe_add_span_event(SpanCtx, EventName, EventAttributes) ->
+    otel_span:add_event(SpanCtx, EventName, EventAttributes),
+    ok.
+
+-spec maybe_record_exception(opentelemetry:span_ctx(), mg_core_utils:exception(), opentelemetry:attributes_map()) -> ok.
+maybe_record_exception(undefined, _Exception, _Attributes) ->
+    ok;
+maybe_record_exception(SpanCtx, {Class, Reason, Stacktrace}, Attributes) ->
+    otel_span:record_exception(SpanCtx, Class, Reason, Stacktrace, Attributes),
+    ok.
