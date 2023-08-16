@@ -65,7 +65,7 @@ handle_beat(
     }
 ) ->
     SpanName = <<"woody_call ", (atom_to_binary(Service))/binary, ":", (atom_to_binary(Function))/binary>>,
-    proc_span_start(WoodySpanId, SpanName, #{attributes => #{kind => ?SPAN_KIND_CLIENT}});
+    proc_span_start(WoodySpanId, SpanName, #{kind => ?SPAN_KIND_CLIENT, attributes => #{}});
 handle_beat(_Options, #woody_event{event = ?EV_SERVICE_RESULT, rpc_id = #{span_id := WoodySpanId}}) ->
     proc_span_end(WoodySpanId);
 handle_beat(
@@ -77,7 +77,7 @@ handle_beat(
     }
 ) ->
     SpanName = <<"woody_invoke ", (atom_to_binary(Service))/binary, ":", (atom_to_binary(Function))/binary>>,
-    proc_span_start(WoodySpanId, SpanName, #{attributes => #{kind => ?SPAN_KIND_SERVER}});
+    proc_span_start(WoodySpanId, SpanName, #{kind => ?SPAN_KIND_SERVER, attributes => #{}});
 handle_beat(_Options, #woody_event{event = ?EV_SERVICE_HANDLER_RESULT, rpc_id = #{span_id := WoodySpanId}}) ->
     proc_span_end(WoodySpanId);
 handle_beat(_Options, _Beat = #woody_event{}) ->
