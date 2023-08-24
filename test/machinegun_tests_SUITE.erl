@@ -92,6 +92,22 @@ groups() ->
 init_per_suite(C) ->
     % dbg:tracer(), dbg:p(all, c),
     % dbg:tpl({mg_machine, retry_strategy, '_'}, x),
+    ok = application:set_env([
+        {opentelemetry, [
+            {span_processor, batch},
+            {traces_exporter, otlp},
+            % {traces_exporter, {otel_exporter_stdout, []}},
+            {resource, [
+                {service, #{name => <<"machinegun">>}}
+            ]}
+        ]},
+
+        {opentelemetry_exporter, [
+            {otlp_protocol, http_protobuf},
+            {otlp_endpoint, "http://jaeger:4318"}
+        ]}
+    ]),
+
     Apps = machinegun_ct_helper:start_applications([cowboy]),
     [{suite_apps, Apps} | C].
 
