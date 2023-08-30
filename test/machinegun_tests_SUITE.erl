@@ -86,7 +86,7 @@ groups() ->
             machine_remove_by_action,
             machine_id_not_found
         ]},
-        {auxiliary, [sequence], [
+        {auxiliary, [], [
             consuela_health_check_passing
         ]}
     ].
