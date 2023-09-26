@@ -321,6 +321,32 @@ proc_span_end(SpanKey) ->
             ok
     end.
 
+-define(SPAN_STACK, otel_span_stack).
+
+span_stack_push(SpanCtx) ->
+    Stack = span_stack_get(),
+    _ = erlang:put(?SPAN_STACK, [SpanCtx| Stack]),
+    ok.
+
+span_stack_maybe_init([]) ->
+    span_stack_init();
+span_stack_maybe_init(Stack) ->
+    Stack.
+
+span_stack_init() ->
+    [otel_tracer:current_span_ctx()].
+
+span_stack_persist(Stack) ->
+    _ = erlang:put(?SPAN_STACK, Stack),
+    ok.
+
+span_stack_get() ->
+    genlib:define(erlang:get(?SPAN_STACK), []).
+
+span_stack_pop() ->
+    Stack = span_stack_get(),
+    hd(Stack).
+
 -spec maybe_add_span_event(opentelemetry:span_ctx(), opentelemetry:event_name(), opentelemetry:attributes_map()) -> ok.
 maybe_add_span_event(undefined, _EventName, _EventAttributes) ->
     ok;
