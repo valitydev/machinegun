@@ -33,7 +33,7 @@
  {<<"kafka_protocol">>,{pkg,<<"kafka_protocol">>,<<"4.0.1">>},2},
  {<<"machinegun_core">>,
   {git,"https://github.com/valitydev/machinegun-core",
-       {ref,"0a1cf5cfe014eca7dd24eeebf51ad614fda58e2b"}},
+       {ref,"5e38ca9b37eafab745e11ac2c4f161b6be2ecea5"}},
   0},
  {<<"machinegun_woody_api">>,
   {git,"https://github.com/valitydev/machinegun-woody-api",
