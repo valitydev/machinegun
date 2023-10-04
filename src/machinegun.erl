@@ -23,11 +23,6 @@ start(_StartType, _StartArgs) ->
     Config = maps:from_list(genlib_app:env(?MODULE)),
     ok = setup_metrics(),
     ChildSpecs = machinegun_configurator:construct_child_specs(Config),
-    logger:info("MG_DUBUG. resolve machinegun-ha: ~p", [inet:gethostbyname("machinegun-ha")]),
-    logger:info(
-        "MG_DUBUG. resolve machinegun-ha.{env.name}: ~p",
-        [inet:gethostbyname("machinegun-ha.stage.empayre.com")]
-    ),
     mg_core_utils_supervisor_wrapper:start_link(
         {local, ?MODULE},
         #{strategy => rest_for_one},

@@ -602,12 +602,18 @@ event_sink(kafka, Name, ESYamlConfig) ->
     }}.
 
 procreg(YamlConfig) ->
-    % Use consuela if it's set up, gproc otherwise
-    conf_with(
+    % Use process_registry if it's set up or consuela if it's set up, gproc otherwise
+    Default = conf_with(
         [consuela],
         YamlConfig,
         mg_core_procreg_gproc,
         {mg_core_procreg_consuela, #{pulse => pulse(YamlConfig)}}
+    ),
+    conf_with(
+        [process_registry],
+        YamlConfig,
+        Default,
+        fun(ProcRegYamlConfig) -> ?C:atom(?C:conf([module], ProcRegYamlConfig)) end
     ).
 
 %%
