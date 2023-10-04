@@ -54,30 +54,7 @@ handle_beat(
 handle_beat(_Options, #mg_core_timer_lifecycle_removed{machine_id = ID, namespace = NS}) ->
     add_event(<<"timer removed">>, machine_tags(NS, ID));
 %% Scheduler handling
-%% ???
-handle_beat(_Options, #mg_core_scheduler_task_add_error{}) ->
-    ok;
-%% Tasks queue scan success.
-handle_beat(_Options, #mg_core_scheduler_search_success{}) ->
-    ok;
-%% Tasks queue scan failure.
-handle_beat(_Options, #mg_core_scheduler_search_error{}) ->
-    ok;
-%% Task execution failed.
-handle_beat(_Options, #mg_core_scheduler_task_error{}) ->
-    ok;
-%% Emits this beat when one or many new tasks were successfully enqueued.
-handle_beat(_Options, #mg_core_scheduler_new_tasks{}) ->
-    ok;
-%% Starting task execution.
-handle_beat(_Options, #mg_core_scheduler_task_started{}) ->
-    ok;
-%% Task execution finished.
-handle_beat(_Options, #mg_core_scheduler_task_finished{}) ->
-    ok;
-%% TODO resource and quota management
-handle_beat(_Options, #mg_core_scheduler_quota_reserved{}) ->
-    ok;
+%% TODO Handle and trace events for 'mg_core_scheduler_*' beats
 %% Timer handling
 %% Wraps `Module:process_machine/7` when processor impact is 'timeout'.
 handle_beat(_Options, #mg_core_timer_process_started{machine_id = ID, namespace = NS, queue = Queue}) ->
