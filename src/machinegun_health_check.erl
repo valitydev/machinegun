@@ -20,6 +20,7 @@ global() ->
 
 %% Internal functions
 
+-spec is_quorum(non_neg_integer()) -> boolean().
 is_quorum(1) ->
     true;
 is_quorum(ClusterSize) ->
