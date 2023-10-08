@@ -353,10 +353,16 @@ health_check(YamlConfig) ->
                 [consuela],
                 YamlConfig,
                 #{},
-                #{consuela => {machinegun_health_check, consuela, []}}
+                #{procreg => {machinegun_health_check, health_check_fun(YamlConfig), []}}
             )
         ]
     ).
+
+health_check_fun(YamlConfig) ->
+    case ?C:atom(?C:conf([process_registry, module], YamlConfig, undefined)) of
+        undefined -> consuela;
+        mg_core_procreg_global -> global
+    end.
 
 quotas(YamlConfig) ->
     SchedulerLimit = ?C:conf([limits, scheduler_tasks], YamlConfig, 5000),
@@ -600,6 +606,7 @@ event_sink(kafka, Name, ESYamlConfig) ->
         client     => ?C:atom(?C:conf([client], ESYamlConfig)),
         topic      => ?C:conf([topic], ESYamlConfig)
     }}.
+
 
 procreg(YamlConfig) ->
     % Use process_registry if it's set up or consuela if it's set up, gproc otherwise
