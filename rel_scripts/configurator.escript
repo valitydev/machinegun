@@ -353,6 +353,12 @@ health_check(YamlConfig) ->
                 [consuela],
                 YamlConfig,
                 #{},
+                #{consuela => {machinegun_health_check, consuela, []}}
+            ),
+            conf_with(
+                [process_registry],
+                YamlConfig,
+                #{},
                 #{procreg => {machinegun_health_check, health_check_fun(YamlConfig), []}}
             )
         ]
