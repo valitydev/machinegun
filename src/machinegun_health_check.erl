@@ -13,6 +13,7 @@ consuela() ->
 -spec global() -> {erl_health:status(), erl_health:details()}.
 global() ->
     ClusterSize = erlang:list_to_integer(os:getenv("REPLICA_COUNT", "1")),
+    logger:info("MG_DEBUG. replica count: ~p", [ClusterSize]),
     case is_quorum(ClusterSize) of
         true -> {passing, []};
         false -> {critical, <<"no quorum">>}
