@@ -365,9 +365,9 @@ health_check(YamlConfig) ->
     ).
 
 health_check_fun(YamlConfig) ->
-    case ?C:atom(?C:conf([process_registry, module], YamlConfig, undefined)) of
+    case ?C:conf([process_registry, module], YamlConfig, undefined) of
         undefined -> consuela;
-        mg_core_procreg_global -> global
+        <<"mg_core_procreg_global">> -> global
     end.
 
 quotas(YamlConfig) ->
