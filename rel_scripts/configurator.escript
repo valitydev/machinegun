@@ -365,8 +365,8 @@ health_check(YamlConfig) ->
     ).
 
 health_check_fun(YamlConfig) ->
-    case ?C:conf([process_registry, module], YamlConfig, undefined) of
-        undefined -> consuela;
+    case ?C:conf([process_registry, module], YamlConfig, <<"mg_core_procreg_consuela">>) of
+        <<"mg_core_procreg_consuela">> -> consuela;
         <<"mg_core_procreg_global">> -> global
     end.
 
