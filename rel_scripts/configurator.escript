@@ -356,6 +356,12 @@ health_check(YamlConfig) ->
                 YamlConfig,
                 #{},
                 #{consuela => {machinegun_health_check, consuela, []}}
+            ),
+            conf_with(
+                [process_registry],
+                YamlConfig,
+                #{},
+                #{procreg => {machinegun_health_check, health_check_fun(YamlConfig), []}}
             )
         ]
     ).
@@ -422,6 +428,12 @@ opentelemetry_exporter(YamlConfig) ->
 
 opentelemetry_conf(YamlConfig) ->
     ?C:conf([opentelemetry], YamlConfig, undefined).
+
+health_check_fun(YamlConfig) ->
+    case ?C:conf([process_registry, module], YamlConfig, <<"mg_core_procreg_consuela">>) of
+        <<"mg_core_procreg_consuela">> -> consuela;
+        <<"mg_core_procreg_global">> -> global
+    end.
 
 quotas(YamlConfig) ->
     SchedulerLimit = ?C:conf([limits, scheduler_tasks], YamlConfig, 5000),
@@ -666,13 +678,20 @@ event_sink(kafka, Name, ESYamlConfig) ->
         topic      => ?C:conf([topic], ESYamlConfig)
     }}.
 
+
 procreg(YamlConfig) ->
-    % Use consuela if it's set up, gproc otherwise
-    conf_with(
+    % Use process_registry if it's set up or consuela if it's set up, gproc otherwise
+    Default = conf_with(
         [consuela],
         YamlConfig,
         mg_core_procreg_gproc,
         {mg_core_procreg_consuela, #{pulse => pulse(YamlConfig)}}
+    ),
+    conf_with(
+        [process_registry],
+        YamlConfig,
+        Default,
+        fun(ProcRegYamlConfig) -> ?C:atom(?C:conf([module], ProcRegYamlConfig)) end
     ).
 
 %%
