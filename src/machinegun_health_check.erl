@@ -19,8 +19,9 @@ global() ->
         true ->
             {passing, []};
         false ->
-            Reason = <<"no quorum. cluster size: ", (erlang:list_to_binary(ReplicaCount))/binary, ", connected: ",
-                (erlang:integer_to_binary(ConnectedCount))/binary>>,
+            Reason =
+                <<"no quorum. cluster size: ", (erlang:list_to_binary(ReplicaCount))/binary, ", connected: ",
+                    (erlang:integer_to_binary(ConnectedCount))/binary>>,
             {critical, Reason}
     end.
 
