@@ -251,6 +251,17 @@ storage:
     request_timeout: 10s
     index_query_timeout: 10s
     batch_concurrency_limit: 50
+    r_options:
+        r: quorum
+        pr: quorum
+        sloppy_quorum: false
+    w_options:
+        w: 4
+        pw: 4
+        dw: 4
+        sloppy_quorum: false
+    d_options:
+        sloppy_quorum: false
 
 ## kafka settings example
 kafka:
