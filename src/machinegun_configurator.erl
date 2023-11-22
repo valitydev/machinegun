@@ -68,7 +68,7 @@ construct_child_specs(
         }
     ),
     %% TODO mg_core_union child_spec
-    logger:error("MG_DEBUG. cluster opts: ~p", [maps:get(cluster, Config)]),
+    logger:error("MG_DEBUG. cluster opts: ~p", [maps:get(cluster, Config, [])]),
 
     lists:flatten([
         QuotasChildSpec,
