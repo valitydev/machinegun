@@ -67,6 +67,8 @@ construct_child_specs(
             additional_routes => [get_health_route(HealthChecks), get_prometheus_route()]
         }
     ),
+    %% TODO mg_core_union child_spec
+    logger:error("MG_DEBUG. cluster opts: ~p", [maps:get(cluster, Config)]),
 
     lists:flatten([
         QuotasChildSpec,

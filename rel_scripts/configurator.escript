@@ -74,7 +74,8 @@ sys_config(YamlConfig) ->
         {hackney, hackney(YamlConfig)},
         {machinegun, machinegun(YamlConfig)},
         {opentelemetry, opentelemetry(YamlConfig)},
-        {opentelemetry_exporter, opentelemetry_exporter(YamlConfig)}
+        {opentelemetry_exporter, opentelemetry_exporter(YamlConfig)},
+        {cluster, cluster(YamlConfig)}
     ].
 
 os_mon(_YamlConfig) ->
@@ -445,6 +446,28 @@ opentelemetry_exporter(YamlConfig) ->
 
 opentelemetry_conf(YamlConfig) ->
     ?C:conf([opentelemetry], YamlConfig, undefined).
+
+cluster(YamlConfig) ->
+    case ?C:conf([cluster], YamlConfig, #{}) of
+        #{<<"discovery">> := DiscoveryOpts} = ClusterOpts ->
+            #{<<"type">> := DiscoveryType, <<"options">> := DiscoveryModOpts} = DiscoveryOpts,
+            DiscoveryMod = discovery_module(DiscoveryType),
+            ReconnectTimeout = maybe_to_integer(maps:get(<<"reconnect_timeout">>, ClusterOpts, 5000)),
+            [
+                {discovery, #{
+                    module => DiscoveryMod,
+                    options => DiscoveryModOpts
+                }},
+                {reconnect_timeout, ReconnectTimeout}
+            ];
+        _ ->
+            []
+    end.
+
+discovery_module(<<"dns">>) -> mg_core_union.
+
+maybe_to_integer(Value) when is_integer(Value) -> Value;
+maybe_to_integer(Value) when is_binary(Value) -> binary_to_integer(Value).
 
 health_check_fun(YamlConfig) ->
     case ?C:conf([process_registry, module], YamlConfig, <<"mg_core_procreg_consuela">>) of
