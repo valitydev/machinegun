@@ -74,7 +74,8 @@ sys_config(YamlConfig) ->
         {hackney               , hackney               (YamlConfig)},
         {machinegun            , machinegun            (YamlConfig)},
         {opentelemetry         , opentelemetry         (YamlConfig)},
-        {opentelemetry_exporter, opentelemetry_exporter(YamlConfig)}
+        {opentelemetry_exporter, opentelemetry_exporter(YamlConfig)},
+        {cluster               , cluster               (YamlConfig)}
     ].
 
 os_mon(_YamlConfig) ->
@@ -434,6 +435,28 @@ health_check_fun(YamlConfig) ->
         <<"mg_core_procreg_consuela">> -> consuela;
         <<"mg_core_procreg_global">> -> global
     end.
+
+cluster(YamlConfig) ->
+    case ?C:conf([cluster], YamlConfig, #{}) of
+        #{<<"discovery">> := DiscoveryOpts} = ClusterOpts ->
+            #{<<"type">> := DiscoveryType, <<"options">> := DiscoveryModOpts} = DiscoveryOpts,
+            DiscoveryMod = discovery_module(DiscoveryType),
+            ReconnectTimeout = maybe_to_integer(maps:get(<<"reconnect_timeout">>, ClusterOpts, 5000)),
+            [
+                {discovery, #{
+                    module => DiscoveryMod,
+                    options => DiscoveryModOpts
+                }},
+                {reconnect_timeout, ReconnectTimeout}
+            ];
+        _ ->
+            []
+    end.
+
+discovery_module(<<"dns">>) -> mg_core_union.
+
+maybe_to_integer(Value) when is_integer(Value) -> Value;
+maybe_to_integer(Value) when is_binary(Value) -> binary_to_integer(Value).
 
 quotas(YamlConfig) ->
     SchedulerLimit = ?C:conf([limits, scheduler_tasks], YamlConfig, 5000),
