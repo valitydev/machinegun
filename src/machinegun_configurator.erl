@@ -53,6 +53,8 @@ construct_child_specs(
 ) ->
     Quotas = maps:get(quotas, Config, []),
     HealthChecks = maps:get(health_check, Config, #{}),
+    %% TODO
+    %ClusterOpts = maps:get(cluster, Config, #{}),
 
     QuotasChildSpec = quotas_child_specs(Quotas, quota),
     EventSinkChildSpec = event_sink_ns_child_spec(EventSinkNS, event_sink, Pulse),
@@ -67,13 +69,15 @@ construct_child_specs(
             additional_routes => [get_health_route(HealthChecks), get_prometheus_route()]
         }
     ),
-    %% TODO mg_core_union child_spec
-    logger:error("MG_DEBUG. cluster opts: ~p", [maps:get(cluster, Config, [])]),
+    %% TODO
+    %ClusterSpec = mg_core_union:child_spec(ClusterOpts),
 
     lists:flatten([
         QuotasChildSpec,
         EventSinkChildSpec,
         EventMachinesChildSpec,
+        %% TODO
+        %ClusterSpec,
         WoodyServerChildSpec
     ]).
 

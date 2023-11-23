@@ -12,17 +12,6 @@ consuela() ->
 
 -spec global() -> {erl_health:status(), erl_health:details()}.
 global() ->
-    logger:error(
-        "MG_DEBUG. resolve headless: ~p",
-        [
-            [
-                inet:getaddrs("machinegun-ha-headless.default.svc.cluster.local", inet),
-                inet:getaddrs("machinegun-ha-headless", inet),
-                inet:getaddrs("machinegun-ha", inet),
-                inet:getaddrs("machinegun-ha-headless.stage.empayre.com", inet)
-            ]
-        ]
-    ),
     ReplicaCount = os:getenv("REPLICA_COUNT", "1"),
     ClusterSize = erlang:list_to_integer(ReplicaCount),
     ConnectedCount = erlang:length(erlang:nodes()),

@@ -438,7 +438,7 @@ health_check_fun(YamlConfig) ->
 
 cluster(YamlConfig) ->
     case ?C:conf([cluster, discovery, type], YamlConfig, undefined) of
-        undefined -> [];
+        undefined -> #{};
         <<"dns">> ->
             DiscoveryOptsList = ?C:conf([cluster, discovery, options], YamlConfig),
             DiscoveryOpts = maps:from_list(DiscoveryOptsList),
@@ -451,7 +451,7 @@ cluster(YamlConfig) ->
                 reconnect_timeout => ReconnectTimeout
             };
         _ ->
-            []
+            #{}
     end.
 
 discovery_module(<<"dns">>) -> mg_core_union.
@@ -495,6 +495,9 @@ storage(NS, YamlConfig) ->
                 connect_timeout => ?C:milliseconds(?C:conf([storage, connect_timeout], YamlConfig, <<"5s">>)),
                 request_timeout => ?C:milliseconds(?C:conf([storage, request_timeout], YamlConfig, <<"10s">>)),
                 index_query_timeout => ?C:milliseconds(?C:conf([storage, index_query_timeout], YamlConfig, <<"10s">>)),
+                %% r_options => decode_rwd_options(?C:conf([storage, r_options], YamlConfig, undefined)),
+                %% w_options => decode_rwd_options(?C:conf([storage, w_options], YamlConfig, undefined)),
+                %% d_options => decode_rwd_options(?C:conf([storage, d_options], YamlConfig, undefined)),
                 pool_options => #{
                     % If `init_count` is greater than zero, then the service will not start
                     % if the riak is unavailable. The `pooler` synchronously creates `init_count`
@@ -511,6 +514,21 @@ storage(NS, YamlConfig) ->
                 sidecar => {machinegun_riak_prometheus, #{}}
             }}
     end.
+
+decode_rwd_options(List) ->
+    lists:map(
+        fun(Item) ->
+            case Item of
+                {Key, Value} when is_binary(Key) andalso is_binary(Value) ->
+                    {?C:atom(Key), ?C:atom(Value)};
+                {Key, Value} when is_binary(Key) ->
+                    {?C:atom(Key), Value};
+                Value when is_binary(Value) ->
+                    ?C:atom(Value)
+            end
+        end,
+        List
+    ).
 
 namespaces(YamlConfig) ->
     lists:foldl(
