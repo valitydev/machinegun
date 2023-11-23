@@ -17,7 +17,9 @@ global() ->
         [
             [
                 inet:getaddrs("machinegun-ha-headless.default.svc.cluster.local", inet),
-                inet:getaddrs("machinegun-ha-headless.default.svc.cluster.local", inet6)
+                inet:getaddrs("machinegun-ha-headless", inet),
+                inet:getaddrs("machinegun-ha", inet),
+                inet:getaddrs("machinegun-ha-headless.stage.empayre.com", inet)
             ]
         ]
     ),
