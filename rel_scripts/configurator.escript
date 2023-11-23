@@ -74,8 +74,7 @@ sys_config(YamlConfig) ->
         {hackney               , hackney               (YamlConfig)},
         {machinegun            , machinegun            (YamlConfig)},
         {opentelemetry         , opentelemetry         (YamlConfig)},
-        {opentelemetry_exporter, opentelemetry_exporter(YamlConfig)},
-        {cluster               , cluster               (YamlConfig)}
+        {opentelemetry_exporter, opentelemetry_exporter(YamlConfig)}
     ].
 
 os_mon(_YamlConfig) ->
@@ -311,7 +310,8 @@ machinegun(YamlConfig) ->
         {quotas         , quotas         (YamlConfig)},
         {namespaces     , namespaces     (YamlConfig)},
         {event_sink_ns  , event_sink_ns  (YamlConfig)},
-        {pulse          , pulse          (YamlConfig)}
+        {pulse          , pulse          (YamlConfig)},
+        {cluster        , cluster        (YamlConfig)}
     ].
 
 woody_server(YamlConfig) ->
@@ -437,20 +437,21 @@ health_check_fun(YamlConfig) ->
     end.
 
 cluster(YamlConfig) ->
-    case ?C:conf([cluster], YamlConfig, #{}) of
-        #{<<"discovery">> := DiscoveryOpts} = ClusterOpts ->
-            #{<<"type">> := DiscoveryType, <<"options">> := DiscoveryModOpts} = DiscoveryOpts,
-            DiscoveryMod = discovery_module(DiscoveryType),
-            ReconnectTimeout = maybe_to_integer(maps:get(<<"reconnect_timeout">>, ClusterOpts, 5000)),
-            [
-                {discovery, #{
-                    module => DiscoveryMod,
-                    options => DiscoveryModOpts
-                }},
-                {reconnect_timeout, ReconnectTimeout}
-            ];
-        ClusterOpts ->
-            [{bad_params, ClusterOpts}]
+    case ?C:conf([cluster, discovery, type], YamlConfig, undefined) of
+        undefined -> [];
+        <<"dns">> ->
+            DiscoveryOptsList = ?C:conf([cluster, discovery, options], YamlConfig),
+            DiscoveryOpts = maps:from_list(DiscoveryOptsList),
+            ReconnectTimeout = ?C:conf([cluster, reconnect_timeout], YamlConfig, 5000),
+            #{
+                discovery => #{
+                    module => mg_core_union,
+                    options => maps:from_list(DiscoveryOptsList)
+                },
+                reconnect_timeout => ReconnectTimeout
+            };
+        _ ->
+            []
     end.
 
 discovery_module(<<"dns">>) -> mg_core_union.
