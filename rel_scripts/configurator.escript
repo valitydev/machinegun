@@ -449,8 +449,8 @@ cluster(YamlConfig) ->
                 }},
                 {reconnect_timeout, ReconnectTimeout}
             ];
-        _ ->
-            []
+        ClusterOpts ->
+            ClusterOpts
     end.
 
 discovery_module(<<"dns">>) -> mg_core_union.
