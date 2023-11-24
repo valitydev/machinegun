@@ -12,6 +12,7 @@ consuela() ->
 
 -spec global() -> {erl_health:status(), erl_health:details()}.
 global() ->
+    logger:warning("list nodes: ~p", [nodes()]),
     ReplicaCount = os:getenv("REPLICA_COUNT", "1"),
     ClusterSize = erlang:list_to_integer(ReplicaCount),
     ConnectedCount = erlang:length(erlang:nodes()),
