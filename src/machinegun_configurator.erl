@@ -53,8 +53,7 @@ construct_child_specs(
 ) ->
     Quotas = maps:get(quotas, Config, []),
     HealthChecks = maps:get(health_check, Config, #{}),
-    %% TODO
-    %ClusterOpts = maps:get(cluster, Config, #{}),
+    ClusterOpts = maps:get(cluster, Config, #{}),
 
     QuotasChildSpec = quotas_child_specs(Quotas, quota),
     EventSinkChildSpec = event_sink_ns_child_spec(EventSinkNS, event_sink, Pulse),
@@ -69,15 +68,13 @@ construct_child_specs(
             additional_routes => [get_health_route(HealthChecks), get_prometheus_route()]
         }
     ),
-    %% TODO
-    %ClusterSpec = mg_core_union:child_spec(ClusterOpts),
+    ClusterSpec = mg_core_union:child_spec(ClusterOpts),
 
     lists:flatten([
         QuotasChildSpec,
         EventSinkChildSpec,
         EventMachinesChildSpec,
-        %% TODO
-        %ClusterSpec,
+        ClusterSpec,
         WoodyServerChildSpec
     ]).
 
