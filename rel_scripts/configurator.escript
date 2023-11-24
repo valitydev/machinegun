@@ -437,19 +437,24 @@ health_check_fun(YamlConfig) ->
     end.
 
 cluster(YamlConfig) ->
-    case ?C:conf([cluster, discovery, type], YamlConfig, undefined) of
-        undefined -> #{};
-        <<"dns">> ->
-            DiscoveryOptsList = ?C:conf([cluster, discovery, options], YamlConfig),
-            DiscoveryOpts = maps:from_list(DiscoveryOptsList),
-            ReconnectTimeout = ?C:conf([cluster, reconnect_timeout], YamlConfig, 5000),
-            #{
-                discovery => #{
-                    module => mg_core_union,
-                    options => maps:from_list(DiscoveryOptsList)
-                },
-                reconnect_timeout => ReconnectTimeout
-            };
+    case ?C:conf([consuela], YamlConfig, undefined) of
+        undefined ->
+            case ?C:conf([cluster, discovery, type], YamlConfig, undefined) of
+                undefined -> #{};
+                <<"dns">> ->
+                    DiscoveryOptsList = ?C:conf([cluster, discovery, options], YamlConfig),
+                    DiscoveryOpts = maps:from_list(DiscoveryOptsList),
+                    ReconnectTimeout = ?C:conf([cluster, reconnect_timeout], YamlConfig, 5000),
+                    #{
+                        discovery => #{
+                            module => mg_core_union,
+                            options => maps:from_list(DiscoveryOptsList)
+                        },
+                        reconnect_timeout => ReconnectTimeout
+                    };
+                _ ->
+                    #{}
+            end;
         _ ->
             #{}
     end.
