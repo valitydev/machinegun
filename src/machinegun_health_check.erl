@@ -2,6 +2,7 @@
 
 -export([consuela/0]).
 -export([global/0]).
+-export([startup/0]).
 
 -spec consuela() -> {erl_health:status(), erl_health:details()}.
 consuela() ->
@@ -25,6 +26,13 @@ global() ->
                     (erlang:integer_to_binary(ConnectedCount))/binary>>,
             {critical, Reason}
     end.
+
+startup() ->
+    ClusterOpts = application:get_env(machinegun, cluster, undefined),
+    Addrs = inet:getaddrs("machinegun-ha-headless", inet),
+    logger:warning("MG_DEBUG: Startup with opts: ~p", [ClusterOpts]),
+    logger:warning("MG_DEBUG: Startup resolved: ~p", [Addrs]),
+    {passing, []}.
 
 %% Internal functions
 
