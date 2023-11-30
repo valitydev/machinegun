@@ -27,6 +27,7 @@ global() ->
             {critical, Reason}
     end.
 
+-spec startup() -> {erl_health:status(), erl_health:details()}.
 startup() ->
     ClusterOpts = application:get_env(machinegun, cluster, undefined),
     Addrs = inet:getaddrs("machinegun-ha-headless", inet),
