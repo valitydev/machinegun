@@ -68,7 +68,8 @@ construct_child_specs(
             additional_routes => [
                 get_startup_route(),
                 get_health_route(HealthChecks),
-                get_prometheus_route()]
+                get_prometheus_route()
+            ]
         }
     ),
     ClusterSpec = mg_core_union:child_spec(ClusterOpts),
