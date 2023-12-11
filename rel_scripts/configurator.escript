@@ -461,7 +461,6 @@ cluster(YamlConfig) ->
                     #{};
                 <<"dns">> ->
                     DiscoveryOptsList = ?C:conf([cluster, discovery, options], YamlConfig),
-                    DiscoveryOpts = maps:from_list(DiscoveryOptsList),
                     ReconnectTimeout = ?C:conf([cluster, reconnect_timeout], YamlConfig, 5000),
                     #{
                         discovery => #{
@@ -476,11 +475,6 @@ cluster(YamlConfig) ->
         _ ->
             #{}
     end.
-
-discovery_module(<<"dns">>) -> mg_core_union.
-
-maybe_to_integer(Value) when is_integer(Value) -> Value;
-maybe_to_integer(Value) when is_binary(Value) -> binary_to_integer(Value).
 
 quotas(YamlConfig) ->
     SchedulerLimit = ?C:conf([limits, scheduler_tasks], YamlConfig, 5000),
