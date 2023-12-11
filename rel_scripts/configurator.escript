@@ -567,7 +567,7 @@ namespaces(YamlConfig) ->
 -define(NS_TIMEOUT(TimeoutName, Default),
     timeout(TimeoutName, NSYamlConfig, Default, ms)
 ).
--define(NS_RETRY_SPEC(Key, DefaultConfig),
+-define(NS_RETRY_SPEC(Key, Name, NSYamlConfig, DefaultConfig),
     ?C:to_retry_policy([namespaces, binary_to_atom(Name), retries, Key], NSYamlConfig, DefaultConfig)
 ).
 
@@ -601,7 +601,7 @@ namespace({Name, NSYamlConfig}, YamlConfig) ->
                 timer_processing_timeout => ?NS_TIMEOUT(timer_processing_timeout, <<"60s">>),
                 reschedule_timeout => ?NS_TIMEOUT(reschedule_timeout, <<"60s">>),
                 retries => #{
-                    storage => ?NS_RETRY_SPEC(storage, #{
+                    storage => ?NS_RETRY_SPEC(storage, Name, NSYamlConfig, #{
                         type => <<"exponential">>,
                         max_retries => <<"infinity">>,
                         factor => 2,
@@ -610,14 +610,14 @@ namespace({Name, NSYamlConfig}, YamlConfig) ->
                     }),
                     %% max_total_timeout not supported for timers yet, see mg_retry:new_strategy/2 comments
                     %% actual timers sheduling resolution is one second
-                    timers => ?NS_RETRY_SPEC(timers, #{
+                    timers => ?NS_RETRY_SPEC(timers, Name, NSYamlConfig, #{
                         type => <<"exponential">>,
                         max_retries => 100,
                         factor => 2,
                         timeout => <<"1s">>,
                         max_timeout => <<"30m">>
                     }),
-                    processor => ?NS_RETRY_SPEC(processor, #{
+                    processor => ?NS_RETRY_SPEC(processor, Name, NSYamlConfig, #{
                         type => <<"exponential">>,
                         max_retries => #{
                             max_total_timeout => <<"1d">>
@@ -626,7 +626,7 @@ namespace({Name, NSYamlConfig}, YamlConfig) ->
                         timeout => <<"10ms">>,
                         max_timeout => <<"60s">>
                     }),
-                    continuation => ?NS_RETRY_SPEC(continuation, #{
+                    continuation => ?NS_RETRY_SPEC(continuation, Name, NSYamlConfig, #{
                         type => <<"exponential">>,
                         max_retries => <<"infinity">>,
                         factor => 2,
