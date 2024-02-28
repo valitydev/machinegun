@@ -19,7 +19,7 @@
  {<<"ctx">>,{pkg,<<"ctx">>,<<"0.6.0">>},2},
  {<<"erl_health">>,
   {git,"https://github.com/valitydev/erlang-health",
-       {ref,"560721622f01463f8040304b2e67ca9f1be68d64"}},
+       {ref,"49716470d0e8dab5e37db55d52dea78001735a3d"}},
   0},
  {<<"genlib">>,
   {git,"https://github.com/valitydev/genlib",
