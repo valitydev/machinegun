@@ -37,5 +37,7 @@ stop(_State) ->
 
 -spec setup_metrics() -> ok.
 setup_metrics() ->
+    ok = woody_ranch_prometheus_collector:setup(),
+    ok = woody_hackney_prometheus_collector:setup(),
     ok = machinegun_pulse_prometheus:setup(),
     ok = machinegun_riak_prometheus:setup().
